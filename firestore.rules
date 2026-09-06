@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================
+    // OPORTUNIDADES
+    // =========================
+    match /opportunities/{opportunityId} {
+
+      allow read: if request.auth != null;
+
+      allow create, update, delete:
+        if request.auth != null
+        && request.auth.token.email == "laelsonlavosier@gmail.com";
+    }
+
+    // =========================
+    // PEDIDOS DE DESBLOQUEIO
+    // =========================
+    match /accesses/{accessId} {
+
+      allow create:
+        if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == "pending";
+
+      allow read:
+        if request.auth != null
+        && (
+          request.auth.token.email == "laelsonlavosier@gmail.com"
+          || resource.data.userId == request.auth.uid
+        );
+
+      allow update:
+        if request.auth != null
+        && request.auth.token.email == "laelsonlavosier@gmail.com";
+
+      allow delete:
+        if request.auth != null
+        && request.auth.token.email == "laelsonlavosier@gmail.com";
+    }
+
+    // =========================
+    // CONTAS DO BROKER
+    // =========================
+    match /brokerAccounts/{userId} {
+
+      allow read:
+        if request.auth != null
+        && request.auth.uid == userId;
+
+      allow create:
+        if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.balance == 10000
+        && request.resource.data.currency == "USD";
+
+      allow update, delete: if false;
+    }
+
+    // =========================
+    // ATIVOS DO BROKER
+    // =========================
+    match /brokerAssets/{assetId} {
+
+      // Usuários autenticados podem visualizar os ativos
+      allow read:
+        if request.auth != null;
+
+      // Somente o administrador pode criar, alterar ou apagar ativos
+      allow create, update, delete:
+        if request.auth != null
+        && request.auth.token.email == "laelsonlavosier@gmail.com";
+    }
+  }
+}
