@@ -118,13 +118,13 @@ export default function BrokerPage() {
           if (!accountSnap.exists()) {
             await setDoc(accountRef, {
               userId: currentUser.uid,
-              balance: 10000,
+              balance:0,
               currency: "USD",
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             });
 
-            setBalance(10000);
+            setBalance(0);
           } else {
             const data = accountSnap.data();
 
