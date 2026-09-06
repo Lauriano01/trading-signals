@@ -1,13 +1,25 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-import serviceAccount from "../secrets/firebase-service-account.json";
+const projectId = process.env.FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+if (!projectId || !clientEmail || !privateKey) {
+  throw new Error(
+    "FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL ou FIREBASE_PRIVATE_KEY não configurado."
+  );
+}
 
 const adminApp =
   getApps().length > 0
     ? getApps()[0]
     : initializeApp({
-        credential: cert(serviceAccount as any),
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
       });
 
 export const adminDb = getFirestore(adminApp);
