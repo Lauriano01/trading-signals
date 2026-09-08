@@ -226,9 +226,9 @@ export default function MarketPage() {
    */
   if (checkingAuth) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
         <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-blue-500" />
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-white/10 border-t-blue-500 sm:h-10 sm:w-10" />
 
           <p className="mt-4 text-sm text-slate-400">
             Verificando sessão...
@@ -246,64 +246,64 @@ export default function MarketPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
 
       {/* HEADER */}
       <header className="border-b border-white/10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
 
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-xl font-bold sm:text-2xl">
               Trade<span className="text-blue-500">Signal</span>
             </h1>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-[11px] text-slate-400 sm:text-xs">
               Daily Market Opportunities
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
 
-  <Link
-    href="/"
-    className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5"
-  >
-    ← Início
-  </Link>
+            <Link
+              href="/"
+              className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-center text-xs text-slate-300 transition hover:bg-white/5 sm:flex-none sm:px-4 sm:text-sm"
+            >
+              ← Início
+            </Link>
 
-  <Link
-    href="/broker"
-    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
-  >
-    Negocie agora
-  </Link>
+            <Link
+              href="/broker"
+              className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-blue-500 sm:flex-none sm:px-4 sm:text-sm"
+            >
+              Negocie agora
+            </Link>
 
-  <button
-    type="button"
-    onClick={handleLogout}
-    className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/20"
-  >
-    Sair
-  </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex-1 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-xs text-red-400 transition hover:bg-red-500/20 sm:flex-none sm:px-4 sm:text-sm"
+            >
+              Sair
+            </button>
 
-</div>
+          </div>
         </div>
       </header>
 
       {/* CONTEÚDO */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
 
         <div className="text-center">
 
-          <div className="mb-4 inline-flex rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-sm text-blue-400">
+          <div className="mb-4 inline-flex rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-xs text-blue-400 sm:px-4 sm:py-2 sm:text-sm">
             Análises de hoje
           </div>
 
-          <h2 className="text-4xl font-bold sm:text-5xl">
+          <h2 className="text-3xl font-bold sm:text-5xl">
             Escolha o seu mercado
           </h2>
 
-          <p className="mx-auto mt-4 max-w-2xl text-slate-400">
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-400 sm:mt-4 sm:text-base">
             Selecione um mercado para consultar as oportunidades preparadas
             para hoje.
           </p>
@@ -311,7 +311,7 @@ export default function MarketPage() {
         </div>
 
         {/* MERCADOS */}
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-7 grid grid-cols-2 gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
 
           {markets.map((market) => (
 
@@ -319,22 +319,22 @@ export default function MarketPage() {
               key={market.name}
               type="button"
               onClick={() => setSelectedMarket(market.name)}
-              className={`rounded-2xl border p-5 text-left transition ${
+              className={`rounded-2xl border p-4 text-left transition sm:p-5 ${
                 selectedMarket === market.name
                   ? "border-blue-500 bg-blue-500/10"
                   : "border-white/10 bg-white/[0.03] hover:border-blue-500/40"
               }`}
             >
 
-              <div className="text-3xl">
+              <div className="text-2xl sm:text-3xl">
                 {market.icon}
               </div>
 
-              <h3 className="mt-4 font-semibold">
+              <h3 className="mt-3 text-sm font-semibold sm:mt-4 sm:text-base">
                 {market.name}
               </h3>
 
-              <p className="mt-1 text-xs leading-5 text-slate-400">
+              <p className="mt-1 text-[11px] leading-4 text-slate-400 sm:text-xs sm:leading-5">
                 {market.description}
               </p>
 
@@ -345,21 +345,21 @@ export default function MarketPage() {
         </div>
 
         {/* OPORTUNIDADES */}
-        <div className="mt-10">
+        <div className="mt-8 sm:mt-10">
 
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
 
-            <div>
-              <h3 className="text-2xl font-bold">
+            <div className="min-w-0">
+              <h3 className="text-xl font-bold sm:text-2xl">
                 Oportunidades — {selectedMarket}
               </h3>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-xs text-slate-400 sm:text-sm">
                 Oportunidades preparadas para este mercado.
               </p>
             </div>
 
-            <div className="rounded-full bg-blue-500/10 px-4 py-2 text-sm text-blue-400">
+            <div className="w-fit rounded-full bg-blue-500/10 px-3 py-1.5 text-xs text-blue-400 sm:px-4 sm:py-2 sm:text-sm">
               {marketOpportunities.length}{" "}
               {marketOpportunities.length === 1
                 ? "oportunidade"
@@ -370,9 +370,9 @@ export default function MarketPage() {
 
           {/* LOADING */}
           {loading && (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center sm:p-10">
 
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-blue-500" />
+              <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-white/10 border-t-blue-500 sm:h-10 sm:w-10" />
 
               <p className="mt-4 text-sm text-slate-400">
                 Carregando oportunidades...
@@ -383,7 +383,7 @@ export default function MarketPage() {
 
           {/* ERRO */}
           {!loading && error && (
-            <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-6 text-center text-red-400">
+            <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-5 text-center text-sm text-red-400 sm:p-6">
               {error}
             </div>
           )}
@@ -393,13 +393,13 @@ export default function MarketPage() {
             !error &&
             marketOpportunities.length === 0 && (
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center sm:p-10">
 
-                <div className="text-4xl">
+                <div className="text-3xl sm:text-4xl">
                   📭
                 </div>
 
-                <h3 className="mt-4 text-xl font-bold">
+                <h3 className="mt-4 text-lg font-bold sm:text-xl">
                   Nenhuma oportunidade
                 </h3>
 
@@ -416,7 +416,7 @@ export default function MarketPage() {
             !error &&
             marketOpportunities.length > 0 && (
 
-              <div className="grid gap-5">
+              <div className="grid gap-4 sm:gap-5">
 
                 {marketOpportunities.map((opportunity) => {
 
@@ -425,26 +425,26 @@ export default function MarketPage() {
                   return (
                     <div
                       key={opportunity.id}
-                      className="rounded-3xl border border-white/10 bg-white/[0.03] p-6"
+                      className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 sm:p-6"
                     >
 
                       {/* CABEÇALHO */}
-                      <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
 
-                        <div>
+                        <div className="min-w-0">
 
-                          <p className="text-xs uppercase tracking-wider text-slate-500">
+                          <p className="text-[11px] uppercase tracking-wider text-slate-500 sm:text-xs">
                             Ativo
                           </p>
 
-                          <h4 className="mt-1 text-2xl font-bold">
+                          <h4 className="mt-1 break-words text-xl font-bold sm:text-2xl">
                             {opportunity.asset}
                           </h4>
 
                         </div>
 
                         <div
-                          className={`rounded-full px-4 py-2 text-sm font-bold ${
+                          className={`rounded-full px-3 py-1.5 text-xs font-bold sm:px-4 sm:py-2 sm:text-sm ${
                             opportunity.direction === "LONG"
                               ? "bg-green-500/10 text-green-400"
                               : "bg-red-500/10 text-red-400"
@@ -456,40 +456,40 @@ export default function MarketPage() {
                       </div>
 
                       {/* INFORMAÇÕES */}
-                      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                      <div className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-3">
 
-                        <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
 
                           <p className="text-xs text-slate-500">
                             Risco
                           </p>
 
-                          <p className="mt-1 font-semibold">
+                          <p className="mt-1 text-sm font-semibold sm:text-base">
                             {opportunity.risk}
                           </p>
 
                         </div>
 
-                        <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
 
                           <p className="text-xs text-slate-500">
                             Mercado
                           </p>
 
-                          <p className="mt-1 font-semibold">
+                          <p className="mt-1 text-sm font-semibold sm:text-base">
                             {opportunity.market}
                           </p>
 
                         </div>
 
-                        <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
 
                           <p className="text-xs text-slate-500">
                             Status
                           </p>
 
                           <p
-                            className={`mt-1 font-semibold ${
+                            className={`mt-1 text-sm font-semibold sm:text-base ${
                               unlocked
                                 ? "text-green-400"
                                 : "text-yellow-400"
@@ -509,34 +509,34 @@ export default function MarketPage() {
                       {/* SINAL DESBLOQUEADO */}
                       {unlocked ? (
 
-                        <div className="mt-6 rounded-2xl border border-green-500/20 bg-green-500/5 p-6">
+                        <div className="mt-5 rounded-2xl border border-green-500/20 bg-green-500/5 p-4 sm:mt-6 sm:p-6">
 
-                          <div className="mb-5 flex items-center gap-2">
+                          <div className="mb-4 flex items-center gap-2 sm:mb-5">
 
-                            <span className="text-2xl">
+                            <span className="text-xl sm:text-2xl">
                               🔓
                             </span>
 
                             <div>
-                              <p className="font-semibold text-green-400">
+                              <p className="text-sm font-semibold text-green-400 sm:text-base">
                                 Análise desbloqueada
                               </p>
 
-                              <p className="text-xs text-slate-400">
+                              <p className="text-[11px] text-slate-400 sm:text-xs">
                                 Você possui acesso a este sinal.
                               </p>
                             </div>
 
                           </div>
 
-                          <div className="grid gap-4 sm:grid-cols-3">
+                          <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
 
                             <div>
                               <p className="text-xs text-slate-500">
                                 Entrada
                               </p>
 
-                              <p className="mt-1 font-semibold">
+                              <p className="mt-1 text-sm font-semibold sm:text-base">
                                 {opportunity.entry}
                               </p>
                             </div>
@@ -546,7 +546,7 @@ export default function MarketPage() {
                                 Stop Loss
                               </p>
 
-                              <p className="mt-1 font-semibold">
+                              <p className="mt-1 text-sm font-semibold sm:text-base">
                                 {opportunity.stopLoss}
                               </p>
                             </div>
@@ -556,20 +556,20 @@ export default function MarketPage() {
                                 Take Profit
                               </p>
 
-                              <p className="mt-1 font-semibold">
+                              <p className="mt-1 text-sm font-semibold sm:text-base">
                                 {opportunity.takeProfit}
                               </p>
                             </div>
 
                           </div>
 
-                          <div className="mt-6">
+                          <div className="mt-5 sm:mt-6">
 
                             <p className="text-sm font-semibold">
                               Análise
                             </p>
 
-                            <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-300">
+                            <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300 sm:leading-7">
                               {opportunity.analysis}
                             </p>
 
@@ -580,15 +580,15 @@ export default function MarketPage() {
                       ) : (
 
                         /* SINAL BLOQUEADO */
-                        <div className="relative mt-6 overflow-hidden rounded-2xl border border-yellow-500/20 bg-yellow-500/5">
+                        <div className="relative mt-5 overflow-hidden rounded-2xl border border-yellow-500/20 bg-yellow-500/5 sm:mt-6">
 
-                          <div className="select-none p-6 blur-sm">
+                          <div className="select-none p-4 blur-sm sm:p-6">
 
                             <p className="text-sm font-semibold">
                               Entrada
                             </p>
 
-                            <p className="mt-1">
+                            <p className="mt-1 text-sm sm:text-base">
                               {opportunity.entry}
                             </p>
 
@@ -596,7 +596,7 @@ export default function MarketPage() {
                               Stop Loss
                             </p>
 
-                            <p className="mt-1">
+                            <p className="mt-1 text-sm sm:text-base">
                               {opportunity.stopLoss}
                             </p>
 
@@ -604,25 +604,29 @@ export default function MarketPage() {
                               Take Profit
                             </p>
 
+                            <p className="mt-1 text-sm sm:text-base">
+                              {opportunity.takeProfit}
+                            </p>
+
                             <p className="mt-4 text-sm font-semibold">
                               Análise
                             </p>
 
-                            <p className="mt-1">
+                            <p className="mt-1 text-sm sm:text-base">
                               {opportunity.analysis}
                             </p>
 
                           </div>
 
-                          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70">
+                          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 px-4">
 
-                            <div className="px-4 text-center">
+                            <div className="max-w-sm text-center">
 
-                              <div className="text-3xl">
+                              <div className="text-2xl sm:text-3xl">
                                 🔒
                               </div>
 
-                              <p className="mt-2 font-semibold">
+                              <p className="mt-2 text-sm font-semibold sm:text-base">
                                 Análise bloqueada
                               </p>
 
@@ -635,7 +639,7 @@ export default function MarketPage() {
                                 onClick={() =>
                                   handleUnlock(opportunity)
                                 }
-                                className="mt-4 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold transition hover:bg-blue-500"
+                                className="mt-4 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold transition hover:bg-blue-500 sm:px-6 sm:py-3 sm:text-sm"
                               >
                                 💳 Desbloquear análise
                               </button>
@@ -661,4 +665,3 @@ export default function MarketPage() {
     </main>
   );
 }
-
