@@ -118,7 +118,7 @@ export default function BrokerPage() {
           if (!accountSnap.exists()) {
             await setDoc(accountRef, {
               userId: currentUser.uid,
-              balance: 0,
+              balance:0,
               currency: "USD",
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
@@ -219,16 +219,15 @@ export default function BrokerPage() {
             .filter((asset) => asset.active);
 
         setAssets(loadedAssets);
-
         console.log(
-          "[BROKER CLIENT] Preços atualizados:",
-          loadedAssets.map((asset) => ({
-            symbol: asset.symbol,
-            price: asset.price,
-            previousPrice: asset.previousPrice,
-            direction: asset.direction,
-          }))
-        );
+  "[BROKER CLIENT] Preços atualizados:",
+  loadedAssets.map((asset) => ({
+    symbol: asset.symbol,
+    price: asset.price,
+    previousPrice: asset.previousPrice,
+    direction: asset.direction,
+  }))
+);
       },
       (error) => {
         console.error(
@@ -384,6 +383,7 @@ export default function BrokerPage() {
     try {
       setOpeningPosition(true);
 
+      // Atualiza o token antes de enviar para a API
       const idToken = await user.getIdToken();
 
       const response = await fetch(
@@ -417,6 +417,8 @@ export default function BrokerPage() {
         data.positionId
       );
 
+      // O Firestore também atualizará o saldo
+      // através do listener em tempo real.
       if (typeof data.balance === "number") {
         setBalance(data.balance);
       }
@@ -562,43 +564,41 @@ export default function BrokerPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
-        <p className="text-sm sm:text-base">
-          Carregando conta...
-        </p>
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+        <p>Carregando conta...</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-slate-950 px-3 py-4 text-white sm:px-6 sm:py-6">
-      <div className="mx-auto w-full max-w-6xl">
+    <main className="min-h-screen bg-slate-950 text-white p-6">
+      <div className="max-w-6xl mx-auto">
 
-        <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="break-words text-2xl font-bold sm:text-3xl">
+        <header className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">
               TradeSignal Broker
             </h1>
 
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="text-slate-400 mt-1">
               Conta de trading simulada
             </p>
           </div>
 
           <button
             onClick={() => router.push("/market")}
-            className="w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm transition hover:bg-slate-700 sm:w-auto sm:py-2"
+            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition"
           >
             Voltar
           </button>
         </header>
 
-        <section className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:mb-8 sm:p-6">
-          <p className="text-sm text-slate-400">
+        <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
+          <p className="text-slate-400 text-sm">
             Saldo disponível
           </p>
 
-          <div className="mt-2 break-words text-3xl font-bold sm:text-4xl">
+          <div className="text-4xl font-bold mt-2">
             {balance !== null
               ? `$${balance.toLocaleString("en-US", {
                   minimumFractionDigits: 2,
@@ -607,39 +607,39 @@ export default function BrokerPage() {
               : "$0.00"}
           </div>
 
-          <p className="mt-1.5 text-sm text-slate-500 sm:mt-2">
+          <p className="text-slate-500 mt-2">
             USD
           </p>
         </section>
 
-        <section className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3 md:gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-          <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6">
-            <p className="text-sm text-slate-400">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <p className="text-slate-400 text-sm">
               Conta
             </p>
 
-            <p className="mt-2 break-words text-base font-semibold sm:text-lg">
+            <p className="text-lg font-semibold mt-2">
               {user?.email}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6">
-            <p className="text-sm text-slate-400">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <p className="text-slate-400 text-sm">
               Moeda
             </p>
 
-            <p className="mt-2 text-base font-semibold sm:text-lg">
+            <p className="text-lg font-semibold mt-2">
               USD
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6">
-            <p className="text-sm text-slate-400">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <p className="text-slate-400 text-sm">
               Status
             </p>
 
-            <p className="mt-2 text-base font-semibold text-green-400 sm:text-lg">
+            <p className="text-lg font-semibold text-green-400 mt-2">
               Ativa
             </p>
           </div>
@@ -650,34 +650,34 @@ export default function BrokerPage() {
             POSIÇÕES ABERTAS
         ========================= */}
 
-        <section className="mt-6 sm:mt-8">
+        <section className="mt-8">
 
-          <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between mb-5">
 
-            <div className="min-w-0">
-              <h2 className="text-xl font-bold sm:text-2xl">
+            <div>
+              <h2 className="text-2xl font-bold">
                 Posições abertas
               </h2>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="text-slate-400 mt-1">
                 Suas operações em andamento
               </p>
             </div>
 
-            <div className="text-xs text-slate-400 sm:text-sm">
+            <div className="text-sm text-slate-400">
               {positions.length} posições
             </div>
 
           </div>
 
           {positions.length === 0 ? (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center sm:p-8">
-              <p className="text-sm text-slate-400 sm:text-base">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
+              <p className="text-slate-400">
                 Você não possui posições abertas.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               {positions.map((position) => {
 
@@ -692,18 +692,18 @@ export default function BrokerPage() {
                 return (
                   <div
                     key={position.id}
-                    className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5"
+                    className="bg-slate-900 border border-slate-800 rounded-2xl p-5"
                   >
 
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between">
 
-                      <div className="min-w-0">
-                        <p className="break-words text-base font-bold sm:text-lg">
+                      <div>
+                        <p className="font-bold text-lg">
                           {position.symbol}
                         </p>
 
                         <p
-                          className={`mt-1 text-xs font-semibold sm:text-sm ${
+                          className={`text-sm font-semibold mt-1 ${
                             position.side === "LONG"
                               ? "text-green-400"
                               : "text-red-400"
@@ -715,40 +715,40 @@ export default function BrokerPage() {
                         </p>
                       </div>
 
-                      <span className="shrink-0 rounded-full bg-green-500/10 px-2 py-1 text-[10px] font-semibold text-green-400 sm:text-xs">
+                      <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-500/10 text-green-400">
                         ABERTA
                       </span>
 
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4">
+                    <div className="grid grid-cols-2 gap-4 mt-5">
 
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-slate-500 sm:text-xs">
+                      <div>
+                        <p className="text-xs text-slate-500">
                           Preço de entrada
                         </p>
 
-                        <p className="mt-1 break-all text-sm font-semibold sm:text-base">
+                        <p className="font-semibold mt-1">
                           ${formatPrice(position.entryPrice)}
                         </p>
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-slate-500 sm:text-xs">
+                      <div>
+                        <p className="text-xs text-slate-500">
                           Preço atual
                         </p>
 
-                        <p className="mt-1 break-all text-sm font-semibold sm:text-base">
+                        <p className="font-semibold mt-1">
                           ${formatPrice(currentPrice)}
                         </p>
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-slate-500 sm:text-xs">
+                      <div>
+                        <p className="text-xs text-slate-500">
                           Quantidade
                         </p>
 
-                        <p className="mt-1 break-all text-sm font-semibold sm:text-base">
+                        <p className="font-semibold mt-1">
                           {position.quantity.toLocaleString(
                             "en-US",
                             {
@@ -759,29 +759,29 @@ export default function BrokerPage() {
                         </p>
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-slate-500 sm:text-xs">
+                      <div>
+                        <p className="text-xs text-slate-500">
                           Valor da operação
                         </p>
 
-                        <p className="mt-1 break-all text-sm font-semibold sm:text-base">
+                        <p className="font-semibold mt-1">
                           ${formatMoney(position.amountUsd)}
                         </p>
                       </div>
 
                     </div>
 
-                    <div className="mt-4 border-t border-slate-800 pt-4 sm:mt-5">
+                    <div className="mt-5 pt-4 border-t border-slate-800">
 
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center justify-between">
 
-                        <div className="min-w-0">
-                          <p className="text-[11px] text-slate-500 sm:text-xs">
+                        <div>
+                          <p className="text-xs text-slate-500">
                             P/L
                           </p>
 
                           <p
-                            className={`mt-1 break-all text-lg font-bold sm:text-xl ${
+                            className={`text-xl font-bold mt-1 ${
                               isProfit
                                 ? "text-green-400"
                                 : "text-red-400"
@@ -792,14 +792,14 @@ export default function BrokerPage() {
                           </p>
                         </div>
 
-                        <div className="min-w-0 text-right">
+                        <div className="text-right">
 
-                          <p className="text-[11px] text-slate-500 sm:text-xs">
+                          <p className="text-xs text-slate-500">
                             Variação
                           </p>
 
                           <p
-                            className={`mt-1 text-base font-bold sm:text-lg ${
+                            className={`text-lg font-bold mt-1 ${
                               isProfit
                                 ? "text-green-400"
                                 : "text-red-400"
@@ -822,7 +822,7 @@ export default function BrokerPage() {
                       disabled={
                         closingPositionId === position.id
                       }
-                      className="mt-4 w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold transition hover:bg-red-500 disabled:opacity-50 sm:mt-5 sm:py-3"
+                      className="w-full mt-5 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 transition font-bold disabled:opacity-50"
                     >
                       {closingPositionId === position.id
                         ? "Fechando posição..."
@@ -842,29 +842,29 @@ export default function BrokerPage() {
             MERCADO
         ========================= */}
 
-        <section className="mt-6 sm:mt-8">
+        <section className="mt-8">
 
-          <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between mb-5">
 
             <div>
-              <h2 className="text-xl font-bold sm:text-2xl">
+              <h2 className="text-2xl font-bold">
                 Mercado
               </h2>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="text-slate-400 mt-1">
                 Ativos disponíveis para negociação
               </p>
             </div>
 
-            <div className="text-xs text-slate-400 sm:text-sm">
+            <div className="text-sm text-slate-400">
               {assets.length} ativos
             </div>
 
           </div>
 
           {assets.length === 0 ? (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center sm:p-8">
-              <p className="text-sm text-slate-400 sm:text-base">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
+              <p className="text-slate-400">
                 Nenhum ativo disponível.
               </p>
             </div>
@@ -884,40 +884,41 @@ export default function BrokerPage() {
               return (
                 <div
                   key={category}
-                  className="mb-6 sm:mb-8"
+                  className="mb-8"
                 >
 
-                  <h3 className="mb-3 text-base font-semibold sm:mb-4 sm:text-lg">
+                  <h3 className="text-lg font-semibold mb-4">
                     {category === "Acoes"
                       ? "Ações"
                       : category}
                   </h3>
 
-                  <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
                     {categoryAssets.map(
                       (asset) => (
 
                         <div
                           key={asset.id}
-                          className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-slate-700 sm:p-5"
+                          className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition"
                         >
 
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start justify-between">
 
-                            <div className="min-w-0">
-                              <p className="break-words text-base font-bold sm:text-lg">
+                            <div>
+
+                              <p className="font-bold text-lg">
                                 {asset.symbol}
                               </p>
 
-                              <p className="mt-1 break-words text-xs text-slate-400 sm:text-sm">
+                              <p className="text-sm text-slate-400 mt-1">
                                 {asset.name}
                               </p>
 
                             </div>
 
                             <span
-                              className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold sm:text-xs ${
+                              className={`text-xs font-semibold px-2 py-1 rounded-full ${
                                 asset.direction === "UP"
                                   ? "bg-green-500/10 text-green-400"
                                   : asset.direction === "DOWN"
@@ -934,13 +935,13 @@ export default function BrokerPage() {
 
                           </div>
 
-                          <div className="mt-4 sm:mt-5">
+                          <div className="mt-5">
 
-                            <p className="text-[11px] text-slate-500 sm:text-xs">
+                            <p className="text-xs text-slate-500">
                               Preço
                             </p>
 
-                            <p className="mt-1 break-all text-xl font-bold sm:text-2xl">
+                            <p className="text-2xl font-bold mt-1">
                               $
                               {formatPrice(
                                 asset.price
@@ -953,7 +954,7 @@ export default function BrokerPage() {
                             onClick={() =>
                               openTradePanel(asset)
                             }
-                            className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold transition hover:bg-blue-500 sm:mt-5 sm:py-2"
+                            className="w-full mt-5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition font-semibold"
                           >
                             Negociar
                           </button>
@@ -974,18 +975,19 @@ export default function BrokerPage() {
 
         {selectedAsset && (
 
-          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-3 sm:p-4">
+          <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
 
-            <div className="my-auto w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl sm:p-6">
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
 
-              <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6">
+              <div className="flex items-center justify-between mb-6">
 
-                <div className="min-w-0">
-                  <h2 className="text-xl font-bold sm:text-2xl">
+                <div>
+
+                  <h2 className="text-2xl font-bold">
                     Negociar
                   </h2>
 
-                  <p className="mt-1 break-words text-xs text-slate-400 sm:text-sm">
+                  <p className="text-slate-400 mt-1">
                     {selectedAsset.symbol} —{" "}
                     {selectedAsset.name}
                   </p>
@@ -995,20 +997,20 @@ export default function BrokerPage() {
                 <button
                   onClick={closeTradePanel}
                   disabled={openingPosition}
-                  className="shrink-0 text-xl text-slate-400 hover:text-white disabled:opacity-50 sm:text-2xl"
+                  className="text-slate-400 hover:text-white text-2xl disabled:opacity-50"
                 >
                   ×
                 </button>
 
               </div>
 
-              <div className="mb-4 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:mb-5 sm:p-4">
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-5">
 
-                <p className="text-[11px] text-slate-500 sm:text-xs">
+                <p className="text-xs text-slate-500">
                   Preço atual
                 </p>
 
-                <p className="mt-1 break-all text-2xl font-bold sm:text-3xl">
+                <p className="text-3xl font-bold mt-1">
                   $
                   {formatPrice(
                     selectedAsset.price
@@ -1017,14 +1019,14 @@ export default function BrokerPage() {
 
               </div>
 
-              <div className="mb-4 grid grid-cols-2 gap-2 sm:mb-5 sm:gap-3">
+              <div className="grid grid-cols-2 gap-3 mb-5">
 
                 <button
                   onClick={() =>
                     setTradeSide("LONG")
                   }
                   disabled={openingPosition}
-                  className={`rounded-lg py-2.5 text-sm font-bold transition sm:py-3 ${
+                  className={`py-3 rounded-lg font-bold transition ${
                     tradeSide === "LONG"
                       ? "bg-green-600 text-white"
                       : "bg-slate-800 text-slate-400 hover:bg-slate-700"
@@ -1038,7 +1040,7 @@ export default function BrokerPage() {
                     setTradeSide("SHORT")
                   }
                   disabled={openingPosition}
-                  className={`rounded-lg py-2.5 text-sm font-bold transition sm:py-3 ${
+                  className={`py-3 rounded-lg font-bold transition ${
                     tradeSide === "SHORT"
                       ? "bg-red-600 text-white"
                       : "bg-slate-800 text-slate-400 hover:bg-slate-700"
@@ -1049,7 +1051,7 @@ export default function BrokerPage() {
 
               </div>
 
-              <label className="mb-2 block text-sm text-slate-400">
+              <label className="block text-sm text-slate-400 mb-2">
                 Valor da operação (USD)
               </label>
 
@@ -1065,12 +1067,12 @@ export default function BrokerPage() {
                 }
                 placeholder="Ex: 100"
                 disabled={openingPosition}
-                className="w-full rounded-lg bg-white px-3 py-2.5 text-sm text-black outline-none disabled:opacity-50 sm:px-4 sm:py-3"
+                className="w-full bg-white text-black rounded-lg px-4 py-3 outline-none disabled:opacity-50"
               />
 
-              <div className="mt-4 space-y-2.5 text-xs sm:mt-5 sm:space-y-3 sm:text-sm">
+              <div className="mt-5 space-y-3 text-sm">
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex justify-between">
 
                   <span className="text-slate-400">
                     Direção
@@ -1079,8 +1081,8 @@ export default function BrokerPage() {
                   <span
                     className={
                       tradeSide === "LONG"
-                        ? "font-semibold text-green-400"
-                        : "font-semibold text-red-400"
+                        ? "text-green-400 font-semibold"
+                        : "text-red-400 font-semibold"
                     }
                   >
                     {tradeSide}
@@ -1088,13 +1090,13 @@ export default function BrokerPage() {
 
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex justify-between">
 
                   <span className="text-slate-400">
                     Valor
                   </span>
 
-                  <span className="break-all text-right">
+                  <span>
                     $
                     {tradeAmountNumber > 0
                       ? tradeAmountNumber.toLocaleString(
@@ -1109,13 +1111,13 @@ export default function BrokerPage() {
 
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex justify-between">
 
                   <span className="text-slate-400">
                     Quantidade
                   </span>
 
-                  <span className="break-all text-right">
+                  <span>
                     {quantity > 0
                       ? quantity.toLocaleString(
                           "en-US",
@@ -1129,13 +1131,13 @@ export default function BrokerPage() {
 
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex justify-between">
 
                   <span className="text-slate-400">
                     Saldo disponível
                   </span>
 
-                  <span className="break-all text-right">
+                  <span>
                     $
                     {balance !== null
                       ? balance.toLocaleString(
@@ -1155,7 +1157,7 @@ export default function BrokerPage() {
               <button
                 onClick={handleOpenPosition}
                 disabled={openingPosition}
-                className={`mt-5 w-full rounded-lg px-4 py-2.5 text-sm font-bold transition sm:mt-6 sm:py-3 ${
+                className={`w-full mt-6 px-4 py-3 rounded-lg transition font-bold ${
                   tradeSide === "LONG"
                     ? "bg-green-600 hover:bg-green-500"
                     : "bg-red-600 hover:bg-red-500"
@@ -1169,7 +1171,7 @@ export default function BrokerPage() {
               <button
                 onClick={closeTradePanel}
                 disabled={openingPosition}
-                className="mt-2 w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm transition hover:bg-slate-700 disabled:opacity-50 sm:py-3"
+                className="w-full mt-2 px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition disabled:opacity-50"
               >
                 Cancelar
               </button>
