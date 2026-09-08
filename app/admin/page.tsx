@@ -148,6 +148,15 @@ export default function AdminPage() {
               💳 Pagamentos
             </button>
 
+            {/* BOTÃO ADMIN BROKER */}
+            <button
+              type="button"
+              onClick={() => router.push("/admin/broker")}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+            >
+              📊 Admin Broker
+            </button>
+
             {/* BOTÃO SAIR */}
             <button
               type="button"
@@ -348,4 +357,3 @@ export default function AdminPage() {
     </main>
   );
 }
-

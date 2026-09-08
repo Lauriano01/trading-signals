@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -265,22 +264,29 @@ export default function MarketPage() {
 
           <div className="flex items-center gap-3">
 
-            <Link
-              href="/"
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5"
-            >
-              ← Início
-            </Link>
+  <Link
+    href="/"
+    className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5"
+  >
+    ← Início
+  </Link>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/20"
-            >
-              Sair
-            </button>
+  <Link
+    href="/broker"
+    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+  >
+    Negocie agora
+  </Link>
 
-          </div>
+  <button
+    type="button"
+    onClick={handleLogout}
+    className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/20"
+  >
+    Sair
+  </button>
+
+</div>
         </div>
       </header>
 
