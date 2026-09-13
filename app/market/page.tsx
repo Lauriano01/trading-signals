@@ -32,6 +32,8 @@ type AccessRequest = {
   status: string;
 };
 
+type DepositMethod = "CARD" | "CRYPTO" | "";
+
 const markets = [
   {
     name: "Crypto",
@@ -60,6 +62,22 @@ const markets = [
   },
 ];
 
+const depositAmounts = [
+  100,
+  250,
+  500,
+  1000,
+  2500,
+  5000,
+  10000,
+  15000,
+  20000,
+];
+
+const USDT_TRC20_ADDRESS =
+  process.env.NEXT_PUBLIC_USDT_TRC20_ADDRESS ||
+  "SEU_ENDERECO_USDT_TRC20_AQUI";
+
 export default function MarketPage() {
   const router = useRouter();
 
@@ -73,6 +91,28 @@ export default function MarketPage() {
 
   const [activeAccesses, setActiveAccesses] = useState<string[]>([]);
   const [checkingAccess, setCheckingAccess] = useState(false);
+
+  /*
+   * MENU
+   */
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  /*
+   * DEPÓSITO
+   */
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [depositAmount, setDepositAmount] = useState<number | null>(null);
+  const [depositMethod, setDepositMethod] =
+    useState<DepositMethod>("");
+  const [copiedAddress, setCopiedAddress] = useState(false);
+
+  /*
+   * DADOS DO CARTÃO
+   */
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
 
   /*
    * VERIFICAR LOGIN
@@ -211,10 +251,91 @@ export default function MarketPage() {
   }
 
   /*
-   * VERIFICAR SE O CLIENTE TEM ACESSO
+   * VERIFICAR ACESSO
    */
   function hasAccess(opportunityId: string) {
     return activeAccesses.includes(opportunityId);
+  }
+
+  /*
+   * ABRIR DEPÓSITO
+   */
+  function openDeposit() {
+    setMenuOpen(false);
+    setDepositOpen(true);
+    setDepositAmount(null);
+    setDepositMethod("");
+    setCopiedAddress(false);
+  }
+
+  /*
+   * FECHAR DEPÓSITO
+   */
+  function closeDeposit() {
+    setDepositOpen(false);
+    setDepositAmount(null);
+    setDepositMethod("");
+    setCopiedAddress(false);
+
+    setCardNumber("");
+    setCardName("");
+    setCardExpiry("");
+    setCardCvv("");
+  }
+
+  /*
+   * COPIAR ENDEREÇO CRYPTO
+   */
+  async function copyCryptoAddress() {
+    if (
+      !USDT_TRC20_ADDRESS ||
+      USDT_TRC20_ADDRESS === "SEU_ENDERECO_USDT_TRC20_AQUI"
+    ) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(USDT_TRC20_ADDRESS);
+      setCopiedAddress(true);
+
+      setTimeout(() => {
+        setCopiedAddress(false);
+      }, 2500);
+    } catch (err) {
+      console.error("Erro ao copiar endereço:", err);
+    }
+  }
+
+  /*
+   * SUBMIT CARTÃO
+   *
+   * Neste momento apenas valida os dados visualmente.
+   * O processamento real do cartão deverá ser ligado
+   * posteriormente a um gateway de pagamento.
+   */
+  function handleCardDeposit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!depositAmount) {
+      alert("Selecione o valor do depósito.");
+      return;
+    }
+
+    if (
+      !cardNumber.trim() ||
+      !cardName.trim() ||
+      !cardExpiry.trim() ||
+      !cardCvv.trim()
+    ) {
+      alert("Preencha todos os dados do cartão.");
+      return;
+    }
+
+    alert(
+      `Depósito de $${depositAmount.toLocaleString(
+        "en-US"
+      )} selecionado. O processamento do cartão será integrado ao gateway de pagamento.`
+    );
   }
 
   const marketOpportunities = opportunities.filter(
@@ -250,8 +371,9 @@ export default function MarketPage() {
 
       {/* HEADER */}
       <header className="border-b border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
 
+          {/* LOGO */}
           <div>
             <h1 className="text-xl font-bold sm:text-2xl">
               Trade<span className="text-blue-500">Signal</span>
@@ -262,32 +384,90 @@ export default function MarketPage() {
             </p>
           </div>
 
-          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
+          {/* AÇÕES DO HEADER */}
+          <div className="flex items-center gap-2 sm:gap-3">
 
-            <Link
-              href="/"
-              className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-center text-xs text-slate-300 transition hover:bg-white/5 sm:flex-none sm:px-4 sm:text-sm"
-            >
-              ← Início
-            </Link>
-
-            <Link
-              href="/broker"
-              className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-blue-500 sm:flex-none sm:px-4 sm:text-sm"
-            >
-              Negocie agora
-            </Link>
-
+            {/* DEPOSITAR — FORA DO MENU */}
             <button
               type="button"
-              onClick={handleLogout}
-              className="flex-1 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-xs text-red-400 transition hover:bg-red-500/20 sm:flex-none sm:px-4 sm:text-sm"
+              onClick={openDeposit}
+              className="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-500 sm:px-5 sm:text-sm"
             >
-              Sair
+              💳 Depositar
             </button>
 
+            {/* HAMBURGER */}
+            <button
+              type="button"
+              aria-label="Abrir menu"
+              onClick={() => setMenuOpen((value) => !value)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] transition hover:bg-white/10"
+            >
+              <div className="space-y-1.5">
+                <span
+                  className={`block h-0.5 w-5 bg-white transition ${
+                    menuOpen ? "translate-y-2 rotate-45" : ""
+                  }`}
+                />
+                <span
+                  className={`block h-0.5 w-5 bg-white transition ${
+                    menuOpen ? "opacity-0" : ""
+                  }`}
+                />
+                <span
+                  className={`block h-0.5 w-5 bg-white transition ${
+                    menuOpen ? "-translate-y-2 -rotate-45" : ""
+                  }`}
+                />
+              </div>
+            </button>
           </div>
         </div>
+
+        {/* MENU */}
+        {menuOpen && (
+          <div className="border-t border-white/10 bg-slate-950">
+            <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+
+              <div className="grid gap-2 sm:max-w-xs">
+
+                <Link
+                  href="/"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300 transition hover:bg-white/[0.06]"
+                >
+                  🏠 Início
+                </Link>
+
+                <Link
+                  href="/broker"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
+                >
+                  📈 Negocie agora
+                </Link>
+
+                <Link
+                  href="/withdraw"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300 transition hover:bg-white/[0.06]"
+                >
+                  💰 Sacar
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-left text-sm text-red-400 transition hover:bg-red-500/20"
+                >
+                  🚪 Sair
+                </button>
+
+              </div>
+
+            </div>
+          </div>
+        )}
       </header>
 
       {/* CONTEÚDO */}
@@ -661,6 +841,392 @@ export default function MarketPage() {
         </div>
 
       </section>
+
+      {/* ========================================================= */}
+      {/* MODAL DE DEPÓSITO                                        */}
+      {/* ========================================================= */}
+
+      {depositOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-sm">
+
+          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/10 bg-slate-950 shadow-2xl">
+
+            {/* CABEÇALHO */}
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950 px-5 py-4 sm:px-6">
+
+              <div>
+                <h2 className="text-lg font-bold sm:text-xl">
+                  Depositar
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+                  Adicione saldo à sua conta.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeDeposit}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
+              >
+                ×
+              </button>
+
+            </div>
+
+            <div className="p-5 sm:p-6">
+
+              {/* PASSO 1 */}
+              <div>
+                <p className="text-sm font-semibold">
+                  1. Selecione o valor
+                </p>
+
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+
+                  {depositAmounts.map((amount) => {
+
+                    const selected = depositAmount === amount;
+
+                    return (
+                      <button
+                        key={amount}
+                        type="button"
+                        onClick={() => setDepositAmount(amount)}
+                        className={`rounded-xl border px-3 py-3 text-sm font-semibold transition ${
+                          selected
+                            ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                            : "border-white/10 bg-white/[0.03] text-slate-300 hover:border-blue-500/40 hover:bg-white/[0.05]"
+                        }`}
+                      >
+                        ${amount.toLocaleString("en-US")}
+                      </button>
+                    );
+                  })}
+
+                </div>
+
+                {/* VALOR PERSONALIZADO */}
+                <div className="mt-4">
+                  <label className="mb-2 block text-xs text-slate-400">
+                    Ou digite outro valor
+                  </label>
+
+                  <input
+                    type="number"
+                    min={100}
+                    max={20000}
+                    value={depositAmount ?? ""}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+
+                      if (!value) {
+                        setDepositAmount(null);
+                        return;
+                      }
+
+                      if (value < 100) {
+                        setDepositAmount(100);
+                        return;
+                      }
+
+                      if (value > 20000) {
+                        setDepositAmount(20000);
+                        return;
+                      }
+
+                      setDepositAmount(value);
+                    }}
+                    placeholder="Entre $100 e $20.000"
+                    className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                  />
+                </div>
+
+              </div>
+
+              {/* PASSO 2 */}
+              {depositAmount && (
+                <div className="mt-7 border-t border-white/10 pt-6">
+
+                  <p className="text-sm font-semibold">
+                    2. Escolha o método de depósito
+                  </p>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+
+                    <button
+                      type="button"
+                      onClick={() => setDepositMethod("CARD")}
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        depositMethod === "CARD"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-white/10 bg-white/[0.03] hover:border-blue-500/40"
+                      }`}
+                    >
+
+                      <div className="text-2xl">
+                        💳
+                      </div>
+
+                      <p className="mt-2 text-sm font-semibold">
+                        Cartão
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        Pague com cartão bancário.
+                      </p>
+
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDepositMethod("CRYPTO")}
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        depositMethod === "CRYPTO"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-white/10 bg-white/[0.03] hover:border-blue-500/40"
+                      }`}
+                    >
+
+                      <div className="text-2xl">
+                        ₮
+                      </div>
+
+                      <p className="mt-2 text-sm font-semibold">
+                        Crypto
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        Deposite usando USDT TRC20.
+                      </p>
+
+                    </button>
+
+                  </div>
+
+                </div>
+              )}
+
+              {/* CARTÃO */}
+              {depositAmount && depositMethod === "CARD" && (
+                <form
+                  onSubmit={handleCardDeposit}
+                  className="mt-7 border-t border-white/10 pt-6"
+                >
+
+                  <div className="mb-4">
+
+                    <p className="text-sm font-semibold">
+                      Pagamento com cartão
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-400">
+                      Valor selecionado:{" "}
+                      <span className="font-semibold text-white">
+                        ${depositAmount.toLocaleString("en-US")}
+                      </span>
+                    </p>
+
+                  </div>
+
+                  <div className="space-y-4">
+
+                    {/* NÚMERO */}
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">
+                        Número do cartão
+                      </label>
+
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="cc-number"
+                        value={cardNumber}
+                        onChange={(event) =>
+                          setCardNumber(event.target.value)
+                        }
+                        placeholder="0000 0000 0000 0000"
+                        className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {/* TITULAR */}
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">
+                        Nome no cartão
+                      </label>
+
+                      <input
+                        type="text"
+                        autoComplete="cc-name"
+                        value={cardName}
+                        onChange={(event) =>
+                          setCardName(event.target.value)
+                        }
+                        placeholder="Nome completo"
+                        className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {/* VALIDADE + CVV */}
+                    <div className="grid grid-cols-2 gap-3">
+
+                      <div>
+                        <label className="mb-2 block text-xs text-slate-400">
+                          Validade
+                        </label>
+
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="cc-exp"
+                          value={cardExpiry}
+                          onChange={(event) =>
+                            setCardExpiry(event.target.value)
+                          }
+                          placeholder="MM/AA"
+                          className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs text-slate-400">
+                          CVV
+                        </label>
+
+                        <input
+                          type="password"
+                          inputMode="numeric"
+                          autoComplete="cc-csc"
+                          value={cardCvv}
+                          onChange={(event) =>
+                            setCardCvv(event.target.value)
+                          }
+                          placeholder="123"
+                          maxLength={4}
+                          className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                          required
+                        />
+                      </div>
+
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-500"
+                    >
+                      💳 Continuar pagamento
+                    </button>
+
+                  </div>
+
+                </form>
+              )}
+
+              {/* CRYPTO */}
+              {depositAmount && depositMethod === "CRYPTO" && (
+                <div className="mt-7 border-t border-white/10 pt-6">
+
+                  <div className="mb-5">
+
+                    <p className="text-sm font-semibold">
+                      Depósito com Crypto
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-400">
+                      Envie exatamente o valor selecionado em USDT pela rede
+                      TRC20.
+                    </p>
+
+                  </div>
+
+                  <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+
+                    <p className="text-xs font-semibold text-yellow-400">
+                      ⚠️ Rede obrigatória
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      Envie somente <strong className="text-white">USDT TRC20</strong>.
+                      Não envie por ERC20, BEP20 ou outra rede.
+                    </p>
+
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+
+                    <p className="text-xs text-slate-500">
+                      Valor do depósito
+                    </p>
+
+                    <p className="mt-1 text-xl font-bold">
+                      ${depositAmount.toLocaleString("en-US")} USDT
+                    </p>
+
+                  </div>
+
+                  <div className="mt-4">
+
+                    <p className="mb-2 text-xs text-slate-400">
+                      Endereço USDT TRC20
+                    </p>
+
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+
+                      <p className="break-all text-sm leading-6 text-slate-200">
+                        {USDT_TRC20_ADDRESS}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={copyCryptoAddress}
+                        disabled={
+                          USDT_TRC20_ADDRESS ===
+                          "SEU_ENDERECO_USDT_TRC20_AQUI"
+                        }
+                        className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {copiedAddress
+                          ? "✅ Endereço copiado"
+                          : "📋 Copiar endereço"}
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+
+                    <p className="text-sm font-semibold text-blue-400">
+                      Como depositar
+                    </p>
+
+                    <p className="mt-2 text-xs leading-6 text-slate-400">
+                      1. Abra sua carteira.
+                      <br />
+                      2. Selecione USDT.
+                      <br />
+                      3. Escolha a rede TRC20.
+                      <br />
+                      4. Envie o valor para o endereço acima.
+                      <br />
+                      5. Aguarde a confirmação da transação.
+                    </p>
+
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
 
     </main>
   );
