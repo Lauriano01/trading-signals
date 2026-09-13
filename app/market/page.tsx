@@ -1,14 +1,25 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { signOut, onAuthStateChanged, User } from "firebase/auth";
+import {
+  signOut,
+  onAuthStateChanged,
+  User,
+} from "firebase/auth";
 import {
   collection,
   getDocs,
   orderBy,
   query,
   where,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { auth, db } from "../../lib/firebase";
@@ -33,6 +44,16 @@ type AccessRequest = {
 };
 
 type DepositMethod = "CARD" | "CRYPTO" | "";
+
+type Language = "pt" | "en" | "es";
+
+type SupportMessage = {
+  id: string;
+  senderId: string;
+  senderType: "user" | "admin";
+  message: string;
+  createdAt?: any;
+};
 
 const markets = [
   {
@@ -76,7 +97,324 @@ const depositAmounts = [
 
 const USDT_TRC20_ADDRESS =
   process.env.NEXT_PUBLIC_USDT_TRC20_ADDRESS ||
-  "SEU_ENDERECO_USDT_TRC20_AQUI";
+  "TSKJtcKJHCcztmn9g5VmL8A5xcHiUgepVA";
+
+const translations = {
+  pt: {
+    home: "Início",
+    tradeNow: "Negocie agora",
+    withdraw: "Sacar",
+    logout: "Sair",
+    deposit: "Depositar",
+    support: "Apoio ao cliente",
+    aiMode: "Modo Inteligência Artificial",
+    aiDescription:
+      "Ative ou desative o modo de Inteligência Artificial.",
+    on: "Ligado",
+    off: "Desligado",
+    language: "Idioma",
+    todayAnalysis: "Análises de hoje",
+    chooseMarket: "Escolha o seu mercado",
+    chooseMarketDescription:
+      "Selecione um mercado para consultar as oportunidades preparadas para hoje.",
+    opportunities: "Oportunidades",
+    prepared: "Oportunidades preparadas para este mercado.",
+    opportunity: "oportunidade",
+    opportunitiesPlural: "oportunidades",
+    loadingOpportunities: "Carregando oportunidades...",
+    noOpportunity: "Nenhuma oportunidade",
+    noOpportunityDescription:
+      "Ainda não existem oportunidades cadastradas para",
+    asset: "Ativo",
+    risk: "Risco",
+    market: "Mercado",
+    status: "Status",
+    checking: "Verificando...",
+    unlocked: "Desbloqueado",
+    locked: "Bloqueado",
+    unlockedAnalysis: "Análise desbloqueada",
+    accessSignal: "Você possui acesso a este sinal.",
+    entry: "Entrada",
+    stopLoss: "Stop Loss",
+    takeProfit: "Take Profit",
+    analysis: "Análise",
+    lockedAnalysis: "Análise bloqueada",
+    paymentToUnlock:
+      "Faça o pagamento para desbloquear este sinal.",
+    unlock: "Desbloquear análise",
+    verifyingSession: "Verificando sessão...",
+    depositTitle: "Depositar",
+    depositDescription: "Adicione saldo à sua conta.",
+    selectAmount: "1. Selecione o valor",
+    customAmount: "Ou digite outro valor",
+    amountPlaceholder: "Entre $100 e $20.000",
+    selectMethod: "2. Escolha o método de depósito",
+    card: "Cartão",
+    cardDescription: "Pague com cartão bancário.",
+    crypto: "Crypto",
+    cryptoDescription: "Deposite usando USDT TRC20.",
+    cardPayment: "Pagamento com cartão",
+    selectedAmount: "Valor selecionado:",
+    cardNumber: "Número do cartão",
+    cardName: "Nome no cartão",
+    fullName: "Nome completo",
+    expiry: "Validade",
+    cvv: "CVV",
+    continuePayment: "Continuar pagamento",
+    cryptoDeposit: "Depósito com Crypto",
+    cryptoDescriptionFull:
+      "Envie exatamente o valor selecionado em USDT pela rede TRC20.",
+    requiredNetwork: "Rede obrigatória",
+    networkWarning:
+      "Envie somente USDT TRC20. Não envie por ERC20, BEP20 ou outra rede.",
+    depositValue: "Valor do depósito",
+    usdtAddress: "Endereço USDT TRC20",
+    copyAddress: "Copiar endereço",
+    addressCopied: "Endereço copiado",
+    howToDeposit: "Como depositar",
+    step1: "Abra sua carteira.",
+    step2: "Selecione USDT.",
+    step3: "Escolha a rede TRC20.",
+    step4: "Envie o valor para o endereço acima.",
+    step5: "Aguarde a confirmação da transação.",
+    supportTitle: "Apoio ao cliente",
+    supportDescription:
+      "Envie uma mensagem e nossa equipe poderá responder.",
+    writeMessage: "Escreva sua mensagem...",
+    send: "Enviar",
+    close: "Fechar",
+    withdrawTitle: "Solicitar saque",
+    withdrawDescription:
+      "Preencha seus dados bancários para receber o saque.",
+    name: "Nome",
+    iban: "IBAN",
+    accountNumber: "Número da conta",
+    bank: "Banco",
+    saveBankData: "Salvar dados",
+    saved: "Dados salvos com sucesso.",
+    aiTitle: "Modo de negociação por IA",
+    aiInfo:
+      "Este botão apenas ativa ou desativa o modo. Nenhuma negociação é executada por esta opção.",
+    enabled: "Ativado",
+    disabled: "Desativado",
+    languageTitle: "Escolha o idioma",
+    errorOpportunities:
+      "Não foi possível carregar as oportunidades.",
+    fillCard: "Preencha todos os dados do cartão.",
+    selectDeposit: "Selecione o valor do depósito.",
+    messageRequired: "Digite uma mensagem.",
+  },
+
+  en: {
+    home: "Home",
+    tradeNow: "Trade now",
+    withdraw: "Withdraw",
+    logout: "Logout",
+    deposit: "Deposit",
+    support: "Customer support",
+    aiMode: "Artificial Intelligence Mode",
+    aiDescription:
+      "Turn the Artificial Intelligence mode on or off.",
+    on: "On",
+    off: "Off",
+    language: "Language",
+    todayAnalysis: "Today's analysis",
+    chooseMarket: "Choose your market",
+    chooseMarketDescription:
+      "Select a market to view today's opportunities.",
+    opportunities: "Opportunities",
+    prepared: "Opportunities prepared for this market.",
+    opportunity: "opportunity",
+    opportunitiesPlural: "opportunities",
+    loadingOpportunities: "Loading opportunities...",
+    noOpportunity: "No opportunities",
+    noOpportunityDescription:
+      "There are no opportunities registered for",
+    asset: "Asset",
+    risk: "Risk",
+    market: "Market",
+    status: "Status",
+    checking: "Checking...",
+    unlocked: "Unlocked",
+    locked: "Locked",
+    unlockedAnalysis: "Analysis unlocked",
+    accessSignal: "You have access to this signal.",
+    entry: "Entry",
+    stopLoss: "Stop Loss",
+    takeProfit: "Take Profit",
+    analysis: "Analysis",
+    lockedAnalysis: "Analysis locked",
+    paymentToUnlock:
+      "Make the payment to unlock this signal.",
+    unlock: "Unlock analysis",
+    verifyingSession: "Checking session...",
+    depositTitle: "Deposit",
+    depositDescription: "Add funds to your account.",
+    selectAmount: "1. Select the amount",
+    customAmount: "Or enter another amount",
+    amountPlaceholder: "Between $100 and $20,000",
+    selectMethod: "2. Choose the deposit method",
+    card: "Card",
+    cardDescription: "Pay with a bank card.",
+    crypto: "Crypto",
+    cryptoDescription: "Deposit using USDT TRC20.",
+    cardPayment: "Card payment",
+    selectedAmount: "Selected amount:",
+    cardNumber: "Card number",
+    cardName: "Name on card",
+    fullName: "Full name",
+    expiry: "Expiry",
+    cvv: "CVV",
+    continuePayment: "Continue payment",
+    cryptoDeposit: "Crypto deposit",
+    cryptoDescriptionFull:
+      "Send exactly the selected amount in USDT through the TRC20 network.",
+    requiredNetwork: "Required network",
+    networkWarning:
+      "Send USDT TRC20 only. Do not send through ERC20, BEP20 or another network.",
+    depositValue: "Deposit amount",
+    usdtAddress: "USDT TRC20 address",
+    copyAddress: "Copy address",
+    addressCopied: "Address copied",
+    howToDeposit: "How to deposit",
+    step1: "Open your wallet.",
+    step2: "Select USDT.",
+    step3: "Choose the TRC20 network.",
+    step4: "Send the amount to the address above.",
+    step5: "Wait for the transaction confirmation.",
+    supportTitle: "Customer support",
+    supportDescription:
+      "Send a message and our team can reply.",
+    writeMessage: "Write your message...",
+    send: "Send",
+    close: "Close",
+    withdrawTitle: "Withdraw",
+    withdrawDescription:
+      "Enter your bank details to receive the withdrawal.",
+    name: "Name",
+    iban: "IBAN",
+    accountNumber: "Account number",
+    bank: "Bank",
+    saveBankData: "Save details",
+    saved: "Details saved successfully.",
+    aiTitle: "AI trading mode",
+    aiInfo:
+      "This button only turns the mode on or off. No trades are executed by this option.",
+    enabled: "Enabled",
+    disabled: "Disabled",
+    languageTitle: "Choose language",
+    errorOpportunities:
+      "Unable to load opportunities.",
+    fillCard: "Please fill in all card details.",
+    selectDeposit: "Select the deposit amount.",
+    messageRequired: "Enter a message.",
+  },
+
+  es: {
+    home: "Inicio",
+    tradeNow: "Negociar ahora",
+    withdraw: "Retirar",
+    logout: "Salir",
+    deposit: "Depositar",
+    support: "Soporte al cliente",
+    aiMode: "Modo de Inteligencia Artificial",
+    aiDescription:
+      "Activa o desactiva el modo de Inteligencia Artificial.",
+    on: "Activado",
+    off: "Desactivado",
+    language: "Idioma",
+    todayAnalysis: "Análisis de hoy",
+    chooseMarket: "Elige tu mercado",
+    chooseMarketDescription:
+      "Selecciona un mercado para consultar las oportunidades de hoy.",
+    opportunities: "Oportunidades",
+    prepared: "Oportunidades preparadas para este mercado.",
+    opportunity: "oportunidad",
+    opportunitiesPlural: "oportunidades",
+    loadingOpportunities: "Cargando oportunidades...",
+    noOpportunity: "Ninguna oportunidad",
+    noOpportunityDescription:
+      "Todavía no hay oportunidades registradas para",
+    asset: "Activo",
+    risk: "Riesgo",
+    market: "Mercado",
+    status: "Estado",
+    checking: "Verificando...",
+    unlocked: "Desbloqueado",
+    locked: "Bloqueado",
+    unlockedAnalysis: "Análisis desbloqueado",
+    accessSignal: "Tienes acceso a esta señal.",
+    entry: "Entrada",
+    stopLoss: "Stop Loss",
+    takeProfit: "Take Profit",
+    analysis: "Análisis",
+    lockedAnalysis: "Análisis bloqueado",
+    paymentToUnlock:
+      "Realiza el pago para desbloquear esta señal.",
+    unlock: "Desbloquear análisis",
+    verifyingSession: "Verificando sesión...",
+    depositTitle: "Depositar",
+    depositDescription: "Añade saldo a tu cuenta.",
+    selectAmount: "1. Selecciona el valor",
+    customAmount: "O introduce otro valor",
+    amountPlaceholder: "Entre $100 y $20.000",
+    selectMethod: "2. Elige el método de depósito",
+    card: "Tarjeta",
+    cardDescription: "Paga con tarjeta bancaria.",
+    crypto: "Crypto",
+    cryptoDescription: "Deposita usando USDT TRC20.",
+    cardPayment: "Pago con tarjeta",
+    selectedAmount: "Valor seleccionado:",
+    cardNumber: "Número de tarjeta",
+    cardName: "Nombre en la tarjeta",
+    fullName: "Nombre completo",
+    expiry: "Vencimiento",
+    cvv: "CVV",
+    continuePayment: "Continuar pago",
+    cryptoDeposit: "Depósito con Crypto",
+    cryptoDescriptionFull:
+      "Envía exactamente el valor seleccionado en USDT por la red TRC20.",
+    requiredNetwork: "Red obligatoria",
+    networkWarning:
+      "Envía solamente USDT TRC20. No envíes por ERC20, BEP20 u otra red.",
+    depositValue: "Valor del depósito",
+    usdtAddress: "Dirección USDT TRC20",
+    copyAddress: "Copiar dirección",
+    addressCopied: "Dirección copiada",
+    howToDeposit: "Cómo depositar",
+    step1: "Abre tu cartera.",
+    step2: "Selecciona USDT.",
+    step3: "Elige la red TRC20.",
+    step4: "Envía el valor a la dirección indicada.",
+    step5: "Espera la confirmación de la transacción.",
+    supportTitle: "Soporte al cliente",
+    supportDescription:
+      "Envía un mensaje y nuestro equipo podrá responder.",
+    writeMessage: "Escribe tu mensaje...",
+    send: "Enviar",
+    close: "Cerrar",
+    withdrawTitle: "Solicitar retiro",
+    withdrawDescription:
+      "Completa tus datos bancarios para recibir el retiro.",
+    name: "Nombre",
+    iban: "IBAN",
+    accountNumber: "Número de cuenta",
+    bank: "Banco",
+    saveBankData: "Guardar datos",
+    saved: "Datos guardados correctamente.",
+    aiTitle: "Modo de negociación con IA",
+    aiInfo:
+      "Este botón solo activa o desactiva el modo. Esta opción no ejecuta ninguna operación.",
+    enabled: "Activado",
+    disabled: "Desactivado",
+    languageTitle: "Elegir idioma",
+    errorOpportunities:
+      "No se pudieron cargar las oportunidades.",
+    fillCard: "Completa todos los datos de la tarjeta.",
+    selectDeposit: "Selecciona el valor del depósito.",
+    messageRequired: "Escribe un mensaje.",
+  },
+};
 
 export default function MarketPage() {
   const router = useRouter();
@@ -113,6 +451,40 @@ export default function MarketPage() {
   const [cardName, setCardName] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvv, setCardCvv] = useState("");
+
+  /*
+   * APOIO AO CLIENTE
+   */
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportMessages, setSupportMessages] =
+    useState<SupportMessage[]>([]);
+  const [sendingSupport, setSendingSupport] = useState(false);
+
+  /*
+   * MODO IA
+   */
+  const [aiMode, setAiMode] = useState(false);
+  const [savingAiMode, setSavingAiMode] = useState(false);
+
+  /*
+   * SAQUE
+   */
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawName, setWithdrawName] = useState("");
+  const [withdrawIban, setWithdrawIban] = useState("");
+  const [withdrawAccountNumber, setWithdrawAccountNumber] = useState("");
+  const [withdrawBank, setWithdrawBank] = useState("");
+  const [savingWithdraw, setSavingWithdraw] = useState(false);
+  const [withdrawSaved, setWithdrawSaved] = useState(false);
+
+  /*
+   * IDIOMA
+   */
+  const [language, setLanguage] = useState<Language>("pt");
+  const [languageOpen, setLanguageOpen] = useState(false);
+
+  const t = translations[language];
 
   /*
    * VERIFICAR LOGIN
@@ -167,7 +539,7 @@ export default function MarketPage() {
         setOpportunities(data);
       } catch (err) {
         console.error("Erro ao carregar oportunidades:", err);
-        setError("Não foi possível carregar as oportunidades.");
+        setError(t.errorOpportunities);
       } finally {
         setLoading(false);
       }
@@ -216,6 +588,90 @@ export default function MarketPage() {
     }
 
     loadAccesses();
+  }, [user]);
+
+  /*
+   * CARREGAR PREFERÊNCIAS DO CLIENTE
+   */
+  useEffect(() => {
+    if (!user) return;
+
+    async function loadUserSettings() {
+      try {
+        const userRef = doc(db, "users", user!.uid);
+        const snapshot = await getDoc(userRef);
+
+        if (!snapshot.exists()) return;
+
+        const data = snapshot.data();
+
+        if (
+          data.language === "pt" ||
+          data.language === "en" ||
+          data.language === "es"
+        ) {
+          setLanguage(data.language);
+        }
+
+        if (typeof data.aiMode === "boolean") {
+          setAiMode(data.aiMode);
+        }
+
+        if (data.withdrawal) {
+          setWithdrawName(data.withdrawal.name || "");
+          setWithdrawIban(data.withdrawal.iban || "");
+          setWithdrawAccountNumber(
+            data.withdrawal.accountNumber || ""
+          );
+          setWithdrawBank(data.withdrawal.bank || "");
+        }
+      } catch (err) {
+        console.error(
+          "Erro ao carregar preferências do cliente:",
+          err
+        );
+      }
+    }
+
+    loadUserSettings();
+  }, [user]);
+
+  /*
+   * CARREGAR CHAT EM TEMPO REAL
+   */
+  useEffect(() => {
+    if (!user) return;
+
+    const messagesRef = collection(
+      db,
+      "supportChats",
+      user.uid,
+      "messages"
+    );
+
+    const messagesQuery = query(
+      messagesRef,
+      orderBy("createdAt", "asc")
+    );
+
+    const unsubscribe = onSnapshot(
+      messagesQuery,
+      (snapshot) => {
+        const messages: SupportMessage[] = snapshot.docs.map(
+          (item) => ({
+            id: item.id,
+            ...(item.data() as Omit<SupportMessage, "id">),
+          })
+        );
+
+        setSupportMessages(messages);
+      },
+      (err) => {
+        console.error("Erro ao carregar chat:", err);
+      }
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
   /*
@@ -287,10 +743,7 @@ export default function MarketPage() {
    * COPIAR ENDEREÇO CRYPTO
    */
   async function copyCryptoAddress() {
-    if (
-      !USDT_TRC20_ADDRESS ||
-      USDT_TRC20_ADDRESS === "SEU_ENDERECO_USDT_TRC20_AQUI"
-    ) {
+    if (!USDT_TRC20_ADDRESS) {
       return;
     }
 
@@ -309,15 +762,16 @@ export default function MarketPage() {
   /*
    * SUBMIT CARTÃO
    *
-   * Neste momento apenas valida os dados visualmente.
-   * O processamento real do cartão deverá ser ligado
-   * posteriormente a um gateway de pagamento.
+   * Mantido como estava:
+   * neste momento apenas valida os dados visualmente.
    */
-  function handleCardDeposit(event: React.FormEvent<HTMLFormElement>) {
+  function handleCardDeposit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     if (!depositAmount) {
-      alert("Selecione o valor do depósito.");
+      alert(t.selectDeposit);
       return;
     }
 
@@ -327,7 +781,7 @@ export default function MarketPage() {
       !cardExpiry.trim() ||
       !cardCvv.trim()
     ) {
-      alert("Preencha todos os dados do cartão.");
+      alert(t.fillCard);
       return;
     }
 
@@ -336,6 +790,150 @@ export default function MarketPage() {
         "en-US"
       )} selecionado. O processamento do cartão será integrado ao gateway de pagamento.`
     );
+  }
+
+  /*
+   * ENVIAR MENSAGEM AO APOIO
+   */
+  async function sendSupportMessage() {
+    if (!user) return;
+
+    const message = supportMessage.trim();
+
+    if (!message) {
+      alert(t.messageRequired);
+      return;
+    }
+
+    try {
+      setSendingSupport(true);
+
+      const messagesRef = collection(
+        db,
+        "supportChats",
+        user.uid,
+        "messages"
+      );
+
+      await addDoc(messagesRef, {
+        senderId: user.uid,
+        senderType: "user",
+        message,
+        createdAt: serverTimestamp(),
+      });
+
+      setSupportMessage("");
+    } catch (err) {
+      console.error("Erro ao enviar mensagem:", err);
+      alert("Não foi possível enviar a mensagem.");
+    } finally {
+      setSendingSupport(false);
+    }
+  }
+
+  /*
+   * ALTERAR MODO IA
+   *
+   * IMPORTANTE:
+   * Este botão não executa nenhuma negociação.
+   */
+  async function toggleAiMode() {
+    if (!user) return;
+
+    const nextValue = !aiMode;
+
+    try {
+      setSavingAiMode(true);
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          aiMode: nextValue,
+        },
+        {
+          merge: true,
+        }
+      );
+
+      setAiMode(nextValue);
+    } catch (err) {
+      console.error("Erro ao salvar modo IA:", err);
+    } finally {
+      setSavingAiMode(false);
+    }
+  }
+
+  /*
+   * SALVAR DADOS DE SAQUE
+   */
+  async function saveWithdrawData() {
+    if (!user) return;
+
+    if (
+      !withdrawName.trim() ||
+      !withdrawIban.trim() ||
+      !withdrawAccountNumber.trim() ||
+      !withdrawBank.trim()
+    ) {
+      alert("Preencha todos os dados para saque.");
+      return;
+    }
+
+    try {
+      setSavingWithdraw(true);
+      setWithdrawSaved(false);
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          withdrawal: {
+            name: withdrawName.trim(),
+            iban: withdrawIban.trim(),
+            accountNumber: withdrawAccountNumber.trim(),
+            bank: withdrawBank.trim(),
+            updatedAt: serverTimestamp(),
+          },
+        },
+        {
+          merge: true,
+        }
+      );
+
+      setWithdrawSaved(true);
+
+      setTimeout(() => {
+        setWithdrawSaved(false);
+      }, 3000);
+    } catch (err) {
+      console.error("Erro ao salvar dados de saque:", err);
+      alert("Não foi possível salvar os dados.");
+    } finally {
+      setSavingWithdraw(false);
+    }
+  }
+
+  /*
+   * ALTERAR IDIOMA
+   */
+  async function changeLanguage(nextLanguage: Language) {
+    setLanguage(nextLanguage);
+    setLanguageOpen(false);
+
+    if (!user) return;
+
+    try {
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          language: nextLanguage,
+        },
+        {
+          merge: true,
+        }
+      );
+    } catch (err) {
+      console.error("Erro ao salvar idioma:", err);
+    }
   }
 
   const marketOpportunities = opportunities.filter(
@@ -352,7 +950,7 @@ export default function MarketPage() {
           <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-white/10 border-t-blue-500 sm:h-10 sm:w-10" />
 
           <p className="mt-4 text-sm text-slate-400">
-            Verificando sessão...
+            {t.verifyingSession}
           </p>
         </div>
       </main>
@@ -387,13 +985,13 @@ export default function MarketPage() {
           {/* AÇÕES DO HEADER */}
           <div className="flex items-center gap-2 sm:gap-3">
 
-            {/* DEPOSITAR — FORA DO MENU */}
+            {/* DEPOSITAR */}
             <button
               type="button"
               onClick={openDeposit}
               className="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-500 sm:px-5 sm:text-sm"
             >
-              💳 Depositar
+              💳 {t.deposit}
             </button>
 
             {/* HAMBURGER */}
@@ -406,7 +1004,9 @@ export default function MarketPage() {
               <div className="space-y-1.5">
                 <span
                   className={`block h-0.5 w-5 bg-white transition ${
-                    menuOpen ? "translate-y-2 rotate-45" : ""
+                    menuOpen
+                      ? "translate-y-2 rotate-45"
+                      : ""
                   }`}
                 />
                 <span
@@ -416,7 +1016,9 @@ export default function MarketPage() {
                 />
                 <span
                   className={`block h-0.5 w-5 bg-white transition ${
-                    menuOpen ? "-translate-y-2 -rotate-45" : ""
+                    menuOpen
+                      ? "-translate-y-2 -rotate-45"
+                      : ""
                   }`}
                 />
               </div>
@@ -436,7 +1038,7 @@ export default function MarketPage() {
                   onClick={() => setMenuOpen(false)}
                   className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300 transition hover:bg-white/[0.06]"
                 >
-                  🏠 Início
+                  🏠 {t.home}
                 </Link>
 
                 <Link
@@ -444,23 +1046,146 @@ export default function MarketPage() {
                   onClick={() => setMenuOpen(false)}
                   className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
                 >
-                  📈 Negocie agora
+                  📈 {t.tradeNow}
                 </Link>
 
-                <Link
-                  href="/withdraw"
-                  onClick={() => setMenuOpen(false)}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300 transition hover:bg-white/[0.06]"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setWithdrawOpen(true);
+                  }}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-slate-300 transition hover:bg-white/[0.06]"
                 >
-                  💰 Sacar
-                </Link>
+                  💰 {t.withdraw}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setSupportOpen(true);
+                  }}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-slate-300 transition hover:bg-white/[0.06]"
+                >
+                  💬 {t.support}
+                </button>
+
+                {/* MODO IA */}
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+
+                  <div className="flex items-center justify-between gap-3">
+
+                    <div>
+                      <p className="text-sm font-semibold">
+                        🤖 {t.aiMode}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        {aiMode ? t.enabled : t.disabled}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={toggleAiMode}
+                      disabled={savingAiMode}
+                      className={`relative h-7 w-12 rounded-full transition ${
+                        aiMode
+                          ? "bg-blue-600"
+                          : "bg-slate-700"
+                      } disabled:opacity-50`}
+                    >
+                      <span
+                        className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                          aiMode
+                            ? "left-6"
+                            : "left-1"
+                        }`}
+                      />
+                    </button>
+
+                  </div>
+
+                  <p className="mt-3 text-[11px] leading-5 text-slate-500">
+                    {t.aiDescription}
+                  </p>
+
+                </div>
+
+                {/* IDIOMA */}
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLanguageOpen((value) => !value)
+                    }
+                    className="flex w-full items-center justify-between text-left"
+                  >
+                    <span className="text-sm font-semibold">
+                      🌐 {t.language}
+                    </span>
+
+                    <span className="text-xs text-slate-400">
+                      {language === "pt"
+                        ? "🇧🇷 Português"
+                        : language === "en"
+                        ? "🇺🇸 English"
+                        : "🇪🇸 Español"}
+                    </span>
+                  </button>
+
+                  {languageOpen && (
+                    <div className="mt-3 grid gap-2">
+
+                      <button
+                        type="button"
+                        onClick={() => changeLanguage("pt")}
+                        className={`rounded-lg px-3 py-2 text-left text-xs transition ${
+                          language === "pt"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        🇧🇷 Português
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => changeLanguage("en")}
+                        className={`rounded-lg px-3 py-2 text-left text-xs transition ${
+                          language === "en"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        🇺🇸 English
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => changeLanguage("es")}
+                        className={`rounded-lg px-3 py-2 text-left text-xs transition ${
+                          language === "es"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        🇪🇸 Español
+                      </button>
+
+                    </div>
+                  )}
+
+                </div>
 
                 <button
                   type="button"
                   onClick={handleLogout}
                   className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-left text-sm text-red-400 transition hover:bg-red-500/20"
                 >
-                  🚪 Sair
+                  🚪 {t.logout}
                 </button>
 
               </div>
@@ -476,16 +1201,15 @@ export default function MarketPage() {
         <div className="text-center">
 
           <div className="mb-4 inline-flex rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-xs text-blue-400 sm:px-4 sm:py-2 sm:text-sm">
-            Análises de hoje
+            {t.todayAnalysis}
           </div>
 
           <h2 className="text-3xl font-bold sm:text-5xl">
-            Escolha o seu mercado
+            {t.chooseMarket}
           </h2>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-400 sm:mt-4 sm:text-base">
-            Selecione um mercado para consultar as oportunidades preparadas
-            para hoje.
+            {t.chooseMarketDescription}
           </p>
 
         </div>
@@ -530,20 +1254,25 @@ export default function MarketPage() {
           <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
 
             <div className="min-w-0">
+
               <h3 className="text-xl font-bold sm:text-2xl">
-                Oportunidades — {selectedMarket}
+                {t.opportunities} — {selectedMarket}
               </h3>
 
               <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-                Oportunidades preparadas para este mercado.
+                {t.prepared}
               </p>
+
             </div>
 
             <div className="w-fit rounded-full bg-blue-500/10 px-3 py-1.5 text-xs text-blue-400 sm:px-4 sm:py-2 sm:text-sm">
+
               {marketOpportunities.length}{" "}
+
               {marketOpportunities.length === 1
-                ? "oportunidade"
-                : "oportunidades"}
+                ? t.opportunity
+                : t.opportunitiesPlural}
+
             </div>
 
           </div>
@@ -555,7 +1284,7 @@ export default function MarketPage() {
               <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-white/10 border-t-blue-500 sm:h-10 sm:w-10" />
 
               <p className="mt-4 text-sm text-slate-400">
-                Carregando oportunidades...
+                {t.loadingOpportunities}
               </p>
 
             </div>
@@ -580,11 +1309,11 @@ export default function MarketPage() {
                 </div>
 
                 <h3 className="mt-4 text-lg font-bold sm:text-xl">
-                  Nenhuma oportunidade
+                  {t.noOpportunity}
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-400">
-                  Ainda não existem oportunidades cadastradas para{" "}
+                  {t.noOpportunityDescription}{" "}
                   {selectedMarket}.
                 </p>
 
@@ -614,7 +1343,7 @@ export default function MarketPage() {
                         <div className="min-w-0">
 
                           <p className="text-[11px] uppercase tracking-wider text-slate-500 sm:text-xs">
-                            Ativo
+                            {t.asset}
                           </p>
 
                           <h4 className="mt-1 break-words text-xl font-bold sm:text-2xl">
@@ -641,7 +1370,7 @@ export default function MarketPage() {
                         <div className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
 
                           <p className="text-xs text-slate-500">
-                            Risco
+                            {t.risk}
                           </p>
 
                           <p className="mt-1 text-sm font-semibold sm:text-base">
@@ -653,7 +1382,7 @@ export default function MarketPage() {
                         <div className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
 
                           <p className="text-xs text-slate-500">
-                            Mercado
+                            {t.market}
                           </p>
 
                           <p className="mt-1 text-sm font-semibold sm:text-base">
@@ -665,7 +1394,7 @@ export default function MarketPage() {
                         <div className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
 
                           <p className="text-xs text-slate-500">
-                            Status
+                            {t.status}
                           </p>
 
                           <p
@@ -676,10 +1405,10 @@ export default function MarketPage() {
                             }`}
                           >
                             {checkingAccess
-                              ? "Verificando..."
+                              ? t.checking
                               : unlocked
-                              ? "✅ Desbloqueado"
-                              : "🔒 Bloqueado"}
+                              ? `✅ ${t.unlocked}`
+                              : `🔒 ${t.locked}`}
                           </p>
 
                         </div>
@@ -698,13 +1427,15 @@ export default function MarketPage() {
                             </span>
 
                             <div>
+
                               <p className="text-sm font-semibold text-green-400 sm:text-base">
-                                Análise desbloqueada
+                                {t.unlockedAnalysis}
                               </p>
 
                               <p className="text-[11px] text-slate-400 sm:text-xs">
-                                Você possui acesso a este sinal.
+                                {t.accessSignal}
                               </p>
+
                             </div>
 
                           </div>
@@ -713,7 +1444,7 @@ export default function MarketPage() {
 
                             <div>
                               <p className="text-xs text-slate-500">
-                                Entrada
+                                {t.entry}
                               </p>
 
                               <p className="mt-1 text-sm font-semibold sm:text-base">
@@ -723,7 +1454,7 @@ export default function MarketPage() {
 
                             <div>
                               <p className="text-xs text-slate-500">
-                                Stop Loss
+                                {t.stopLoss}
                               </p>
 
                               <p className="mt-1 text-sm font-semibold sm:text-base">
@@ -733,7 +1464,7 @@ export default function MarketPage() {
 
                             <div>
                               <p className="text-xs text-slate-500">
-                                Take Profit
+                                {t.takeProfit}
                               </p>
 
                               <p className="mt-1 text-sm font-semibold sm:text-base">
@@ -746,7 +1477,7 @@ export default function MarketPage() {
                           <div className="mt-5 sm:mt-6">
 
                             <p className="text-sm font-semibold">
-                              Análise
+                              {t.analysis}
                             </p>
 
                             <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300 sm:leading-7">
@@ -765,7 +1496,7 @@ export default function MarketPage() {
                           <div className="select-none p-4 blur-sm sm:p-6">
 
                             <p className="text-sm font-semibold">
-                              Entrada
+                              {t.entry}
                             </p>
 
                             <p className="mt-1 text-sm sm:text-base">
@@ -773,7 +1504,7 @@ export default function MarketPage() {
                             </p>
 
                             <p className="mt-4 text-sm font-semibold">
-                              Stop Loss
+                              {t.stopLoss}
                             </p>
 
                             <p className="mt-1 text-sm sm:text-base">
@@ -781,7 +1512,7 @@ export default function MarketPage() {
                             </p>
 
                             <p className="mt-4 text-sm font-semibold">
-                              Take Profit
+                              {t.takeProfit}
                             </p>
 
                             <p className="mt-1 text-sm sm:text-base">
@@ -789,7 +1520,7 @@ export default function MarketPage() {
                             </p>
 
                             <p className="mt-4 text-sm font-semibold">
-                              Análise
+                              {t.analysis}
                             </p>
 
                             <p className="mt-1 text-sm sm:text-base">
@@ -807,11 +1538,11 @@ export default function MarketPage() {
                               </div>
 
                               <p className="mt-2 text-sm font-semibold sm:text-base">
-                                Análise bloqueada
+                                {t.lockedAnalysis}
                               </p>
 
                               <p className="mt-1 text-xs text-slate-400">
-                                Faça o pagamento para desbloquear este sinal.
+                                {t.paymentToUnlock}
                               </p>
 
                               <button
@@ -821,7 +1552,7 @@ export default function MarketPage() {
                                 }
                                 className="mt-4 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold transition hover:bg-blue-500 sm:px-6 sm:py-3 sm:text-sm"
                               >
-                                💳 Desbloquear análise
+                                💳 {t.unlock}
                               </button>
 
                             </div>
@@ -851,16 +1582,15 @@ export default function MarketPage() {
 
           <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/10 bg-slate-950 shadow-2xl">
 
-            {/* CABEÇALHO */}
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950 px-5 py-4 sm:px-6">
 
               <div>
                 <h2 className="text-lg font-bold sm:text-xl">
-                  Depositar
+                  {t.depositTitle}
                 </h2>
 
                 <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-                  Adicione saldo à sua conta.
+                  {t.depositDescription}
                 </p>
               </div>
 
@@ -878,8 +1608,9 @@ export default function MarketPage() {
 
               {/* PASSO 1 */}
               <div>
+
                 <p className="text-sm font-semibold">
-                  1. Selecione o valor
+                  {t.selectAmount}
                 </p>
 
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -906,10 +1637,10 @@ export default function MarketPage() {
 
                 </div>
 
-                {/* VALOR PERSONALIZADO */}
                 <div className="mt-4">
+
                   <label className="mb-2 block text-xs text-slate-400">
-                    Ou digite outro valor
+                    {t.customAmount}
                   </label>
 
                   <input
@@ -937,9 +1668,10 @@ export default function MarketPage() {
 
                       setDepositAmount(value);
                     }}
-                    placeholder="Entre $100 e $20.000"
+                    placeholder={t.amountPlaceholder}
                     className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
                   />
+
                 </div>
 
               </div>
@@ -949,7 +1681,7 @@ export default function MarketPage() {
                 <div className="mt-7 border-t border-white/10 pt-6">
 
                   <p className="text-sm font-semibold">
-                    2. Escolha o método de depósito
+                    {t.selectMethod}
                   </p>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -969,11 +1701,11 @@ export default function MarketPage() {
                       </div>
 
                       <p className="mt-2 text-sm font-semibold">
-                        Cartão
+                        {t.card}
                       </p>
 
                       <p className="mt-1 text-xs text-slate-400">
-                        Pague com cartão bancário.
+                        {t.cardDescription}
                       </p>
 
                     </button>
@@ -993,11 +1725,11 @@ export default function MarketPage() {
                       </div>
 
                       <p className="mt-2 text-sm font-semibold">
-                        Crypto
+                        {t.crypto}
                       </p>
 
                       <p className="mt-1 text-xs text-slate-400">
-                        Deposite usando USDT TRC20.
+                        {t.cryptoDescription}
                       </p>
 
                     </button>
@@ -1017,11 +1749,11 @@ export default function MarketPage() {
                   <div className="mb-4">
 
                     <p className="text-sm font-semibold">
-                      Pagamento com cartão
+                      {t.cardPayment}
                     </p>
 
                     <p className="mt-1 text-xs text-slate-400">
-                      Valor selecionado:{" "}
+                      {t.selectedAmount}{" "}
                       <span className="font-semibold text-white">
                         ${depositAmount.toLocaleString("en-US")}
                       </span>
@@ -1031,10 +1763,9 @@ export default function MarketPage() {
 
                   <div className="space-y-4">
 
-                    {/* NÚMERO */}
                     <div>
                       <label className="mb-2 block text-xs text-slate-400">
-                        Número do cartão
+                        {t.cardNumber}
                       </label>
 
                       <input
@@ -1051,10 +1782,9 @@ export default function MarketPage() {
                       />
                     </div>
 
-                    {/* TITULAR */}
                     <div>
                       <label className="mb-2 block text-xs text-slate-400">
-                        Nome no cartão
+                        {t.cardName}
                       </label>
 
                       <input
@@ -1064,18 +1794,17 @@ export default function MarketPage() {
                         onChange={(event) =>
                           setCardName(event.target.value)
                         }
-                        placeholder="Nome completo"
+                        placeholder={t.fullName}
                         className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
                         required
                       />
                     </div>
 
-                    {/* VALIDADE + CVV */}
                     <div className="grid grid-cols-2 gap-3">
 
                       <div>
                         <label className="mb-2 block text-xs text-slate-400">
-                          Validade
+                          {t.expiry}
                         </label>
 
                         <input
@@ -1094,7 +1823,7 @@ export default function MarketPage() {
 
                       <div>
                         <label className="mb-2 block text-xs text-slate-400">
-                          CVV
+                          {t.cvv}
                         </label>
 
                         <input
@@ -1118,7 +1847,7 @@ export default function MarketPage() {
                       type="submit"
                       className="w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-500"
                     >
-                      💳 Continuar pagamento
+                      💳 {t.continuePayment}
                     </button>
 
                   </div>
@@ -1133,12 +1862,11 @@ export default function MarketPage() {
                   <div className="mb-5">
 
                     <p className="text-sm font-semibold">
-                      Depósito com Crypto
+                      {t.cryptoDeposit}
                     </p>
 
                     <p className="mt-1 text-xs text-slate-400">
-                      Envie exatamente o valor selecionado em USDT pela rede
-                      TRC20.
+                      {t.cryptoDescriptionFull}
                     </p>
 
                   </div>
@@ -1146,12 +1874,11 @@ export default function MarketPage() {
                   <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4">
 
                     <p className="text-xs font-semibold text-yellow-400">
-                      ⚠️ Rede obrigatória
+                      ⚠️ {t.requiredNetwork}
                     </p>
 
                     <p className="mt-1 text-xs leading-5 text-slate-400">
-                      Envie somente <strong className="text-white">USDT TRC20</strong>.
-                      Não envie por ERC20, BEP20 ou outra rede.
+                      {t.networkWarning}
                     </p>
 
                   </div>
@@ -1159,7 +1886,7 @@ export default function MarketPage() {
                   <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
 
                     <p className="text-xs text-slate-500">
-                      Valor do depósito
+                      {t.depositValue}
                     </p>
 
                     <p className="mt-1 text-xl font-bold">
@@ -1171,7 +1898,7 @@ export default function MarketPage() {
                   <div className="mt-4">
 
                     <p className="mb-2 text-xs text-slate-400">
-                      Endereço USDT TRC20
+                      {t.usdtAddress}
                     </p>
 
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -1183,15 +1910,12 @@ export default function MarketPage() {
                       <button
                         type="button"
                         onClick={copyCryptoAddress}
-                        disabled={
-                          USDT_TRC20_ADDRESS ===
-                          "SEU_ENDERECO_USDT_TRC20_AQUI"
-                        }
+                        disabled={!USDT_TRC20_ADDRESS}
                         className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {copiedAddress
-                          ? "✅ Endereço copiado"
-                          : "📋 Copiar endereço"}
+                          ? `✅ ${t.addressCopied}`
+                          : `📋 ${t.copyAddress}`}
                       </button>
 
                     </div>
@@ -1201,25 +1925,253 @@ export default function MarketPage() {
                   <div className="mt-5 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
 
                     <p className="text-sm font-semibold text-blue-400">
-                      Como depositar
+                      {t.howToDeposit}
                     </p>
 
                     <p className="mt-2 text-xs leading-6 text-slate-400">
-                      1. Abra sua carteira.
+                      1. {t.step1}
                       <br />
-                      2. Selecione USDT.
+                      2. {t.step2}
                       <br />
-                      3. Escolha a rede TRC20.
+                      3. {t.step3}
                       <br />
-                      4. Envie o valor para o endereço acima.
+                      4. {t.step4}
                       <br />
-                      5. Aguarde a confirmação da transação.
+                      5. {t.step5}
                     </p>
 
                   </div>
 
                 </div>
               )}
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL DE APOIO AO CLIENTE                                */}
+      {/* ========================================================= */}
+
+      {supportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-sm">
+
+          <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-2xl">
+
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
+
+              <div>
+                <h2 className="text-lg font-bold sm:text-xl">
+                  💬 {t.supportTitle}
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+                  {t.supportDescription}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSupportOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
+              >
+                ×
+              </button>
+
+            </div>
+
+            <div className="flex-1 space-y-3 overflow-y-auto p-5 sm:p-6">
+
+              {supportMessages.length === 0 && (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center text-sm text-slate-400">
+                  {t.supportDescription}
+                </div>
+              )}
+
+              {supportMessages.map((message) => (
+
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.senderType === "user"
+                      ? "justify-end"
+                      : "justify-start"
+                  }`}
+                >
+
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
+                      message.senderType === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white/[0.06] text-slate-200"
+                    }`}
+                  >
+                    {message.message}
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+            <div className="border-t border-white/10 p-4 sm:p-5">
+
+              <div className="flex gap-2">
+
+                <input
+                  type="text"
+                  value={supportMessage}
+                  onChange={(event) =>
+                    setSupportMessage(event.target.value)
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "Enter" &&
+                      !event.shiftKey
+                    ) {
+                      event.preventDefault();
+                      sendSupportMessage();
+                    }
+                  }}
+                  placeholder={t.writeMessage}
+                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                />
+
+                <button
+                  type="button"
+                  onClick={sendSupportMessage}
+                  disabled={sendingSupport}
+                  className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+                >
+                  {sendingSupport ? "..." : t.send}
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL DE SAQUE                                           */}
+      {/* ========================================================= */}
+
+      {withdrawOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-sm">
+
+          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/10 bg-slate-950 shadow-2xl">
+
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
+
+              <div>
+                <h2 className="text-lg font-bold sm:text-xl">
+                  💰 {t.withdrawTitle}
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+                  {t.withdrawDescription}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setWithdrawOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
+              >
+                ×
+              </button>
+
+            </div>
+
+            <div className="space-y-4 p-5 sm:p-6">
+
+              <div>
+                <label className="mb-2 block text-xs text-slate-400">
+                  {t.name}
+                </label>
+
+                <input
+                  type="text"
+                  value={withdrawName}
+                  onChange={(event) =>
+                    setWithdrawName(event.target.value)
+                  }
+                  placeholder={t.fullName}
+                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs text-slate-400">
+                  {t.iban}
+                </label>
+
+                <input
+                  type="text"
+                  value={withdrawIban}
+                  onChange={(event) =>
+                    setWithdrawIban(event.target.value)
+                  }
+                  placeholder="IBAN"
+                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs text-slate-400">
+                  {t.accountNumber}
+                </label>
+
+                <input
+                  type="text"
+                  value={withdrawAccountNumber}
+                  onChange={(event) =>
+                    setWithdrawAccountNumber(event.target.value)
+                  }
+                  placeholder={t.accountNumber}
+                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs text-slate-400">
+                  {t.bank}
+                </label>
+
+                <input
+                  type="text"
+                  value={withdrawBank}
+                  onChange={(event) =>
+                    setWithdrawBank(event.target.value)
+                  }
+                  placeholder={t.bank}
+                  className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                />
+              </div>
+
+              {withdrawSaved && (
+                <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-400">
+                  ✅ {t.saved}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={saveWithdrawData}
+                disabled={savingWithdraw}
+                className="w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
+              >
+                {savingWithdraw
+                  ? "..."
+                  : `💾 ${t.saveBankData}`}
+              </button>
 
             </div>
 
