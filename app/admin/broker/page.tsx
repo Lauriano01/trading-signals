@@ -22,6 +22,7 @@ type BrokerAsset = {
   price: number;
   previousPrice: number;
   direction: "UP" | "DOWN" | "NEUTRAL";
+  marketDirection?: "UP" | "DOWN" | "NEUTRAL";
   active: boolean;
 };
 
@@ -57,22 +58,30 @@ export default function AdminBrokerPage() {
   const [accounts, setAccounts] = useState<BrokerAccount[]>([]);
 
   const [loading, setLoading] = useState(false);
-  const [loadingAccounts, setLoadingAccounts] = useState(false);
-  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [loadingAccounts, setLoadingAccounts] =
+    useState(false);
+  const [balanceLoading, setBalanceLoading] =
+    useState(false);
 
   const [message, setMessage] = useState("");
-  const [balanceMessage, setBalanceMessage] = useState("");
+  const [balanceMessage, setBalanceMessage] =
+    useState("");
 
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [balanceAmount, setBalanceAmount] = useState("");
+  const [selectedUserId, setSelectedUserId] =
+    useState("");
+  const [balanceAmount, setBalanceAmount] =
+    useState("");
 
   // =========================
   // CONFIGURAÇÃO DO MERCADO
   // =========================
 
-  const [marketLoading, setMarketLoading] = useState(false);
-  const [marketMessage, setMarketMessage] = useState("");
-  const [engineLoading, setEngineLoading] = useState(false);
+  const [marketLoading, setMarketLoading] =
+    useState(false);
+  const [marketMessage, setMarketMessage] =
+    useState("");
+  const [engineLoading, setEngineLoading] =
+    useState(false);
 
   const [marketSettings, setMarketSettings] =
     useState<MarketSettings>({
@@ -127,6 +136,9 @@ export default function AdminBrokerPage() {
               ),
               direction:
                 data.direction ?? "NEUTRAL",
+              marketDirection:
+                data.marketDirection ??
+                undefined,
               active:
                 data.active ?? true,
             };
@@ -840,7 +852,7 @@ export default function AdminBrokerPage() {
   }
 
   // =========================
-  // ALTERAR PREÇO
+  // ALTERAR PREÇO + DIREÇÃO PERSISTENTE
   // =========================
 
   async function changePrice(
@@ -848,6 +860,10 @@ export default function AdminBrokerPage() {
     direction: "UP" | "DOWN"
   ) {
     try {
+      /**
+       * Mantém o ajuste manual imediato
+       * de 1% existente.
+       */
       const variation =
         asset.price * 0.01;
 
@@ -859,6 +875,13 @@ export default function AdminBrokerPage() {
               asset.price - variation
             );
 
+      /**
+       * marketDirection é a direção
+       * persistente do ativo.
+       *
+       * O motor automático usa esse valor
+       * antes da direção global do mercado.
+       */
       await updateDoc(
         doc(
           db,
@@ -873,9 +896,17 @@ export default function AdminBrokerPage() {
 
           direction,
 
+          marketDirection: direction,
+
           updatedAt:
             serverTimestamp(),
         }
+      );
+
+      setMessage(
+        direction === "UP"
+          ? `${asset.symbol} configurado para continuar SUBINDO.`
+          : `${asset.symbol} configurado para continuar DESCENDO.`
       );
     } catch (error) {
       console.error(
@@ -897,6 +928,11 @@ export default function AdminBrokerPage() {
     asset: BrokerAsset
   ) {
     try {
+      /**
+       * NEUTRO também é persistente.
+       * Isso impede o motor de voltar
+       * automaticamente para a direção global.
+       */
       await updateDoc(
         doc(
           db,
@@ -906,14 +942,25 @@ export default function AdminBrokerPage() {
         {
           direction: "NEUTRAL",
 
+          marketDirection:
+            "NEUTRAL",
+
           updatedAt:
             serverTimestamp(),
         }
+      );
+
+      setMessage(
+        `${asset.symbol} configurado como NEUTRO.`
       );
     } catch (error) {
       console.error(
         "Erro ao alterar direção:",
         error
+      );
+
+      setMessage(
+        "Erro ao definir o ativo como neutro."
       );
     }
   }
@@ -1837,7 +1884,7 @@ export default function AdminBrokerPage() {
                       }
                       className="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 transition font-semibold"
                     >
-                      ▲ SUBIR 1%
+                      ▲ SUBIR
                     </button>
 
                     <button
@@ -1849,7 +1896,7 @@ export default function AdminBrokerPage() {
                       }
                       className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 transition font-semibold"
                     >
-                      ▼ DESCER 1%
+                      ▼ DESCER
                     </button>
 
                   </div>
@@ -1864,6 +1911,10 @@ export default function AdminBrokerPage() {
                   >
                     Definir Neutro
                   </button>
+
+                  <p className="text-xs text-slate-500 mt-3">
+                    A direção escolhida permanece ativa até você alterá-la.
+                  </p>
 
                 </div>
               )
