@@ -23,6 +23,7 @@ type BrokerAsset = {
   previousPrice: number;
   direction: "UP" | "DOWN" | "NEUTRAL";
   marketDirection?: "UP" | "DOWN" | "NEUTRAL";
+  marketTargetPrice?: number;
   active: boolean;
 };
 
@@ -71,6 +72,16 @@ export default function AdminBrokerPage() {
     useState("");
   const [balanceAmount, setBalanceAmount] =
     useState("");
+
+  // =========================
+  // PREÇOS-ALVO INDIVIDUAIS
+  // =========================
+
+  const [assetTargetPrices, setAssetTargetPrices] =
+    useState<Record<string, string>>({});
+
+  const [targetSavingId, setTargetSavingId] =
+    useState<string | null>(null);
 
   // =========================
   // CONFIGURAÇÃO DO MERCADO
@@ -139,12 +150,55 @@ export default function AdminBrokerPage() {
               marketDirection:
                 data.marketDirection ??
                 undefined,
+              marketTargetPrice:
+                Number.isFinite(
+                  Number(
+                    data.marketTargetPrice
+                  )
+                ) &&
+                Number(
+                  data.marketTargetPrice
+                ) > 0
+                  ? Number(
+                      data.marketTargetPrice
+                    )
+                  : undefined,
               active:
                 data.active ?? true,
             };
           });
 
         setAssets(loadedAssets);
+
+        // =========================
+        // CARREGAR ALVOS DOS ATIVOS
+        // =========================
+
+        setAssetTargetPrices(
+          (current) => {
+            const next = {
+              ...current,
+            };
+
+            for (const asset of loadedAssets) {
+              if (
+                asset.marketTargetPrice &&
+                asset.marketTargetPrice > 0
+              ) {
+                next[asset.id] =
+                  String(
+                    asset.marketTargetPrice
+                  );
+              } else if (
+                next[asset.id] === undefined
+              ) {
+                next[asset.id] = "";
+              }
+            }
+
+            return next;
+          }
+        );
       },
       (error) => {
         console.error(
@@ -860,10 +914,6 @@ export default function AdminBrokerPage() {
     direction: "UP" | "DOWN"
   ) {
     try {
-      /**
-       * Mantém o ajuste manual imediato
-       * de 1% existente.
-       */
       const variation =
         asset.price * 0.01;
 
@@ -875,13 +925,6 @@ export default function AdminBrokerPage() {
               asset.price - variation
             );
 
-      /**
-       * marketDirection é a direção
-       * persistente do ativo.
-       *
-       * O motor automático usa esse valor
-       * antes da direção global do mercado.
-       */
       await updateDoc(
         doc(
           db,
@@ -928,11 +971,6 @@ export default function AdminBrokerPage() {
     asset: BrokerAsset
   ) {
     try {
-      /**
-       * NEUTRO também é persistente.
-       * Isso impede o motor de voltar
-       * automaticamente para a direção global.
-       */
       await updateDoc(
         doc(
           db,
@@ -962,6 +1000,107 @@ export default function AdminBrokerPage() {
       setMessage(
         "Erro ao definir o ativo como neutro."
       );
+    }
+  }
+
+  // =========================
+  // SALVAR PREÇO-ALVO DO ATIVO
+  // =========================
+
+  async function saveAssetTargetPrice(
+    asset: BrokerAsset
+  ) {
+    try {
+      setTargetSavingId(asset.id);
+      setMessage("");
+
+      const rawValue =
+        assetTargetPrices[asset.id] ??
+        "";
+
+      const targetPrice =
+        Number(rawValue);
+
+      if (
+        !Number.isFinite(targetPrice) ||
+        targetPrice <= 0
+      ) {
+        setMessage(
+          `Digite um preço-alvo válido para ${asset.symbol}.`
+        );
+        return;
+      }
+
+      const currentPrice =
+        Number(asset.price);
+
+      if (
+        !Number.isFinite(currentPrice) ||
+        currentPrice <= 0
+      ) {
+        setMessage(
+          `O preço atual de ${asset.symbol} é inválido.`
+        );
+        return;
+      }
+
+      let marketDirection:
+        | "UP"
+        | "DOWN"
+        | "NEUTRAL";
+
+      if (targetPrice > currentPrice) {
+        marketDirection = "UP";
+      } else if (
+        targetPrice < currentPrice
+      ) {
+        marketDirection = "DOWN";
+      } else {
+        marketDirection = "NEUTRAL";
+      }
+
+      await updateDoc(
+        doc(
+          db,
+          "brokerAssets",
+          asset.id
+        ),
+        {
+          marketTargetPrice:
+            targetPrice,
+
+          marketDirection,
+
+          updatedAt:
+            serverTimestamp(),
+        }
+      );
+
+      setMessage(
+        `${asset.symbol}: alvo de $${formatPrice(
+          targetPrice
+        )} salvo. Direção definida como ${
+          marketDirection === "UP"
+            ? "SUBIR"
+            : marketDirection ===
+              "DOWN"
+            ? "DESCER"
+            : "NEUTRO"
+        }.`
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao salvar preço-alvo:",
+        error
+      );
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao salvar preço-alvo."
+      );
+    } finally {
+      setTargetSavingId(null);
     }
   }
 
@@ -1332,11 +1471,11 @@ export default function AdminBrokerPage() {
               </select>
             </div>
 
-            {/* PREÇO ALVO */}
+            {/* PREÇO ALVO GLOBAL */}
 
             <div>
               <label className="block text-sm text-slate-400 mb-2">
-                Preço-alvo
+                Preço-alvo global
               </label>
 
               <input
@@ -1363,7 +1502,7 @@ export default function AdminBrokerPage() {
               />
 
               <p className="text-xs text-slate-500 mt-2">
-                O motor tenta aproximar o mercado deste preço.
+                Usado como alvo padrão quando o ativo não possui um alvo individual.
               </p>
             </div>
 
@@ -1799,7 +1938,7 @@ export default function AdminBrokerPage() {
               </h2>
 
               <p className="text-slate-400 mt-1">
-                Controle o preço e a direção de cada ativo.
+                Controle o preço, a direção e o preço-alvo de cada ativo.
               </p>
             </div>
 
@@ -1873,6 +2012,76 @@ export default function AdminBrokerPage() {
 
                   </div>
 
+                  {/* =========================
+                      PREÇO-ALVO INDIVIDUAL
+                  ========================= */}
+
+                  <div className="mt-5">
+
+                    <label className="block text-xs text-slate-500 mb-2">
+                      Preço-alvo deste ativo
+                    </label>
+
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.0001"
+                      value={
+                        assetTargetPrices[
+                          asset.id
+                        ] ?? ""
+                      }
+                      onChange={(event) =>
+                        setAssetTargetPrices(
+                          (current) => ({
+                            ...current,
+
+                            [asset.id]:
+                              event.target.value,
+                          })
+                        )
+                      }
+                      placeholder={`Ex: ${formatPrice(
+                        asset.price
+                      )}`}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white placeholder-slate-600 outline-none focus:border-blue-500"
+                    />
+
+                    {asset.marketTargetPrice &&
+                      asset.marketTargetPrice >
+                        0 && (
+                        <p className="text-xs text-slate-500 mt-2">
+                          Alvo atual: $
+                          {formatPrice(
+                            asset.marketTargetPrice
+                          )}
+                        </p>
+                      )}
+
+                    <button
+                      onClick={() =>
+                        saveAssetTargetPrice(
+                          asset
+                        )
+                      }
+                      disabled={
+                        targetSavingId ===
+                        asset.id
+                      }
+                      className="w-full mt-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition font-semibold text-sm"
+                    >
+                      {targetSavingId ===
+                      asset.id
+                        ? "Salvando alvo..."
+                        : "SALVAR PREÇO-ALVO"}
+                    </button>
+
+                  </div>
+
+                  {/* =========================
+                      ALTERAÇÃO MANUAL DE PREÇO
+                  ========================= */}
+
                   <div className="grid grid-cols-2 gap-2 mt-5">
 
                     <button
@@ -1913,7 +2122,7 @@ export default function AdminBrokerPage() {
                   </button>
 
                   <p className="text-xs text-slate-500 mt-3">
-                    A direção escolhida permanece ativa até você alterá-la.
+                    O alvo individual controla a direção automática deste ativo até chegar ao preço definido.
                   </p>
 
                 </div>
