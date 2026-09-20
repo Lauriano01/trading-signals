@@ -151,7 +151,7 @@ const translations = {
     card: "Cartão",
     cardDescription: "Pague com cartão bancário.",
     crypto: "Crypto",
-    cryptoDescription: "Deposite usando USDT TRC20.",
+    cryptoDescription: "Deposite usando SOL pela rede Solana.",
     cardPayment: "Pagamento com cartão",
     selectedAmount: "Valor selecionado:",
     cardNumber: "Número do cartão",
@@ -1720,7 +1720,7 @@ export default function MarketPage() {
                     >
 
                       <div className="text-2xl">
-                        ₮
+                        ◎
                       </div>
 
                       <p className="mt-2 text-sm font-semibold">
