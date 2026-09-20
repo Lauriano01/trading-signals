@@ -1,4 +1,4 @@
-
+﻿
 "use client";
 
 import { useEffect, useState } from "react";
@@ -94,10 +94,9 @@ const depositAmounts = [
   15000,
   20000,
 ];
-
-const USDT_TRC20_ADDRESS =
-  process.env.NEXT_PUBLIC_USDT_TRC20_ADDRESS ||
-  "TSKJtcKJHCcztmn9g5VmL8A5xcHiUgepVA";
+const SOLANA_ADDRESS =
+  process.env.NEXT_PUBLIC_SOLANA_ADDRESS ||
+  "CEYYhrQMCr3ZB859mu7adSd8zpoSXLgBZVj4nhpCZnNH";
 
 const translations = {
   pt: {
@@ -163,18 +162,18 @@ const translations = {
     continuePayment: "Continuar pagamento",
     cryptoDeposit: "Depósito com Crypto",
     cryptoDescriptionFull:
-      "Envie exatamente o valor selecionado em USDT pela rede TRC20.",
+       "Envie exatamente o valor selecionado em SOL pela rede Solana.",
     requiredNetwork: "Rede obrigatória",
     networkWarning:
-      "Envie somente USDT TRC20. Não envie por ERC20, BEP20 ou outra rede.",
+       "Envie exatamente o valor selecionado em SOL pela rede Solana.",
     depositValue: "Valor do depósito",
-    usdtAddress: "Endereço USDT TRC20",
+    usdtAddress: "Endereço Solana",
     copyAddress: "Copiar endereço",
     addressCopied: "Endereço copiado",
     howToDeposit: "Como depositar",
     step1: "Abra sua carteira.",
-    step2: "Selecione USDT.",
-    step3: "Escolha a rede TRC20.",
+    step2: "Selecione Sol.",
+    step3: "Escolha a rede Solana.",
     step4: "Envie o valor para o endereço acima.",
     step5: "Aguarde a confirmação da transação.",
     supportTitle: "Apoio ao cliente",
@@ -743,12 +742,12 @@ export default function MarketPage() {
    * COPIAR ENDEREÇO CRYPTO
    */
   async function copyCryptoAddress() {
-    if (!USDT_TRC20_ADDRESS) {
+    if (!SOLANA_ADDRESS) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(USDT_TRC20_ADDRESS);
+      await navigator.clipboard.writeText(SOLANA_ADDRESS);
       setCopiedAddress(true);
 
       setTimeout(() => {
@@ -1904,13 +1903,13 @@ export default function MarketPage() {
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
 
                       <p className="break-all text-sm leading-6 text-slate-200">
-                        {USDT_TRC20_ADDRESS}
+                        {SOLANA_ADDRESS}
                       </p>
 
                       <button
                         type="button"
                         onClick={copyCryptoAddress}
-                        disabled={!USDT_TRC20_ADDRESS}
+                        disabled={!SOLANA_ADDRESS}
                         className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {copiedAddress
