@@ -266,7 +266,7 @@ export default function BrokerPage() {
             </h1>
 
             <p className="text-slate-400 mt-1">
-              Conta de trading simulada
+              Conta de Investimento
             </p>
           </div>
 
